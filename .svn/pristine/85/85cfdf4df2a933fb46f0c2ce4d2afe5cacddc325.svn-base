@@ -1,0 +1,274 @@
+package com.boventech.gplearn.controller;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.Constants;
+import com.boventech.gplearn.entity.LearnCourse;
+import com.boventech.gplearn.entity.LearnPlan;
+import com.boventech.gplearn.entity.LearnSubProject;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.entity.Discipline.LearnRange;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.LearnCourseService;
+import com.boventech.gplearn.service.LearnPlanService;
+import com.boventech.gplearn.service.LearnSubProjectService;
+import com.google.common.collect.Lists;
+
+@Controller
+@RequestMapping(value = "/learnplan")
+public class LearnPlanController extends ApplicationController {
+
+	@Autowired
+	private LearnPlanService learnPlanService;
+
+	@Autowired
+	private LearnCourseService learnCourseService;
+
+	@Autowired
+	private LearnSubProjectService learnSubProjectService;
+
+	@Autowired
+	private BatchService batchService;
+
+	@RequiredPrivilege(value={Privilege.SYSTEM_LEARNPLAN})
+	@RequestMapping
+	public String index(Model model, Integer page,HttpServletRequest request) {
+		setSiteBarActive("jw", "learnplan", request);
+		List<LearnPlan> list = learnPlanService.listWithPagination(page);
+		model.addAttribute("list", list);
+		return "learnplan/index";
+	}
+
+	/**
+	 * 在当前批次下创建教学计划
+	 * 
+	 * @param model
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.SYSTEM_LEARNPLAN})
+	@RequestMapping(value = "/create")
+	public String create(Model model, RedirectAttributes redirectAttr) {
+		if (null == batchService.getCurrentBatch()) {
+			sendErrorMessageWhenRedirect(redirectAttr,
+					"learnPlan.currentbatch.null");
+			return "redirect:/batch";
+		}
+		if (!learnSubProjectService.isExsitByBatchId(batchService
+				.getCurrentBatch().getId())) {
+			sendErrorMessageWhenRedirect(redirectAttr,
+					"learnPlan.currentbatch.learnsubprojectlist.null");
+			return "redirect:/learnproject";
+		}
+		if (!learnCourseService.isExsit()) {
+			sendErrorMessageWhenRedirect(redirectAttr,
+					"learnPlan.learncourse.null");
+			return "redirect:/learncourse";
+		}
+		initSelectData(model);
+		return "learnplan/create";
+	}
+
+	@RequiredPrivilege(value={Privilege.SYSTEM_LEARNPLAN})
+	@RequestMapping(value = "/{id}/update")
+	public String edit(@PathVariable Long id, RedirectAttributes redirectAttr,
+			Model model) {
+		LearnPlan learnPlan = learnPlanService.findById(id);
+		if (null == learnPlan) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr,
+					"common.obj.notfound", "id : " + id);
+			return "redirect:/learnplan";
+		}
+		initSelectData(model);
+		List<LearnCourse> learnCourseList=learnCourseService.listWithLearnRange(learnPlan.getLearnRange());
+		model.addAttribute("learnCourseList", learnCourseList);
+		model.addAttribute("learnPlan", learnPlan);
+		return "learnplan/update";
+	}
+
+	@RequiredPrivilege(value={Privilege.SYSTEM_LEARNPLAN})
+	@RequestMapping(method = RequestMethod.POST)
+	public String save(LearnPlan learnPlan, Long learnSubProjectId,
+			Long learnCourseId, RedirectAttributes redirectAttr, Model model) {
+		if (null == learnSubProjectId || null == learnCourseId || learnCourseId==-1) {
+			sendErrorMessage(model, "learnCourse.selected.null");
+			initSelectData(model);
+			model.addAttribute("learnPlan", learnPlan);
+			return "learnplan/create";
+		}
+		if(learnPlanService.isExsitByName(learnPlan.getName())){
+			sendErrorMessageWithParameter(model, "common.name.exsit",learnPlan.getName());
+			initSelectData(model);
+			model.addAttribute("learnPlan",learnPlan);
+			return "learnplan/create";
+		}
+		if(learnPlanService.isExsitByCode(learnPlan.getCode())){
+			sendErrorMessageWithParameter(model, "common.name.exsit", learnPlan.getCode());
+			initSelectData(model);
+			model.addAttribute("learnPlan",learnPlan);
+			return "learnplan/create";
+		}
+		LearnSubProject learnSubProject = learnSubProjectService
+				.findById(learnSubProjectId);
+		LearnCourse learnCourse = learnCourseService.findById(learnCourseId);
+
+		learnPlan.setBatch(batchService.getCurrentBatch());
+		learnPlan.setLearnCourse(learnCourse);
+		learnPlan.setLearnSubProject(learnSubProject);
+
+		if (isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRange(learnPlan)) {
+			sendErrorMessageWithParameter(model, "common.name.exsit", learnPlan.getBatch()
+					.getCode()
+					+ Constants.BREAKE_STR
+					+ getMessage(learnPlan.getLearnRange().toString())
+					+ Constants.BREAKE_STR
+					+ learnPlan.getLearnSubProject().getName()
+					+ Constants.BREAKE_STR
+					+ learnPlan.getLearnCourse().getName());
+			initSelectData(model);
+			model.addAttribute("learnPlan", learnPlan);
+			return "learnplan/create";
+		}
+		
+		learnPlanService.save(learnPlan);
+		sendNoticeWhenRedirect(redirectAttr, "common.add.success");
+		/**
+		 * TODO 创建新的教学计划后，将学科、批次、课程信息推送到学习平台
+		 */
+		return "redirect:/learnplan";
+	}
+
+	@RequiredPrivilege(value={Privilege.SYSTEM_LEARNPLAN})
+	@RequestMapping(value="/{id}",method=RequestMethod.PUT)
+	public String update(LearnPlan learnPlan, Long learnSubProjectId,
+			Long learnCourseId, RedirectAttributes redirectAttr, Model model) {
+		if (null == learnSubProjectId || null == learnCourseId || learnCourseId==-1) {
+			sendErrorMessage(model, "learnCourse.selected.null");
+			initSelectData(model);
+			model.addAttribute("learnPlan", learnPlan);
+			return "learnplan/update";
+		}
+		
+		if(learnPlanService.isExsitByNameWithOutCurrent(learnPlan)){
+			sendErrorMessageWithParameter(model, "common.name.exsit",learnPlan.getName());
+			initSelectData(model);
+			model.addAttribute("learnPlan",learnPlan);
+			return "learnplan/update";
+		}
+		if(learnPlanService.isExsitByCodeWithOutCurrent(learnPlan)){
+			sendErrorMessageWithParameter(model, "common.name.exsit", learnPlan.getCode());
+			initSelectData(model);
+			model.addAttribute("learnPlan",learnPlan);
+			return "learnplan/update";
+		}
+		
+		LearnSubProject learnSubProject = learnSubProjectService
+		.findById(learnSubProjectId);
+		LearnCourse learnCourse = learnCourseService.findById(learnCourseId);
+		
+		learnPlan.setBatch(batchService.getCurrentBatch());
+		learnPlan.setLearnCourse(learnCourse);
+		learnPlan.setLearnSubProject(learnSubProject);
+		
+		
+		if (isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRangeWithOutCurrent(learnPlan)) {
+			sendErrorMessageWithParameter(model, "common.name.exsit", learnPlan.getBatch()
+					.getCode()
+					+ Constants.BREAKE_STR
+					+ getMessage(learnPlan.getLearnRange().toString())
+					+ Constants.BREAKE_STR
+					+ learnPlan.getLearnSubProject().getName()
+					+ Constants.BREAKE_STR
+					+ learnPlan.getLearnCourse().getName());
+			initSelectData(model);
+			model.addAttribute("learnPlan", learnPlan);
+			return "learnplan/update";
+		}
+		
+		
+		learnPlanService.update(learnPlan);
+		sendNoticeWhenRedirect(redirectAttr, "common.update.success");
+		/**
+		 * 修改教学计划之后，推送更新后的 学科、批次、课程信息推送[将老的记录去掉]
+		 */
+		return "redirect:/learnplan";
+	}
+
+	@RequiredPrivilege(value={Privilege.SYSTEM_LEARNPLAN})
+	@RequestMapping(value="/{id}")
+	public String show(@PathVariable Long id,RedirectAttributes redirectAttr,Model model){
+		LearnPlan learnPlan  = learnPlanService.findById(id);
+		if(null==learnPlan){
+			sendErrorMessageWhenRedirect(redirectAttr,"common.obj.notfound");
+			return "redirect:/learnplan";
+		}
+		model.addAttribute("learnPlan", learnPlan);
+		return "learnplan/show";
+	}
+
+
+	@RequiredPrivilege(value={Privilege.SYSTEM_LEARNPLAN})
+	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
+	public String destroy(@PathVariable Long id,RedirectAttributes redirectAttr) {
+		LearnPlan learnPlan  = learnPlanService.findById(id);
+		if(null== learnPlan){
+			sendErrorMessageWhenRedirect(redirectAttr, "common.obj.notfound");
+			return "redirect:/learnplan";
+		}
+		try {
+			learnPlanService.delete(id);
+			sendNoticeWhenRedirect(redirectAttr, "common.destroy.success");
+		} catch (Exception e) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr, "common.reference.delete", learnPlan.getName());
+		}
+		/**
+		 * TODO 删除一个教学计划，将删除教学计划的批次、学科、课程信息发送到学习平台通知删除
+		 */
+		return "redirect:/learnplan";
+	}
+	
+	@RequiredPrivilege(value={Privilege.SYSTEM_LEARNPLAN})
+	@RequestMapping(value="/changelearncourse",method=RequestMethod.POST)
+	@ResponseBody
+	public List<LearnCourse> choisLearnRangeToChangeLearnCourseList(LearnRange learnRange){
+		List<LearnCourse> data=Lists.newArrayList();
+		data=learnCourseService.listWithLearnRange(learnRange);
+		return data;
+	}
+	
+	private void initSelectData(Model model) {
+		LearnRange[] learnRangeList = LearnRange.values();
+		Batch currentBatch = batchService.getCurrentBatch();
+		List<LearnSubProject> learnSubProjectList = learnSubProjectService
+				.listWithBatchId(currentBatch.getId());
+		List<LearnCourse> learnCourseList = learnCourseService.listWithLearnRange(LearnRange.GP);
+		model.addAttribute("learnRangeList", learnRangeList);
+		model.addAttribute("learnSubProjectList", learnSubProjectList);
+		model.addAttribute("currentBatch", currentBatch);
+		model.addAttribute("learnCourseList", learnCourseList);
+	}
+
+	private boolean isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRange(
+			LearnPlan learnPlan) {
+
+		return learnPlanService
+				.isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRange(learnPlan);
+	}
+	
+	private boolean isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRangeWithOutCurrent(
+			LearnPlan learnPlan) {
+		return learnPlanService.isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRangeWithOutCurrent(learnPlan);
+	}
+}

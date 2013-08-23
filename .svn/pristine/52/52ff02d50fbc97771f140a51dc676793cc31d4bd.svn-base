@@ -1,0 +1,81 @@
+package com.boventech.gplearn.controller;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.LearnResource;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.User.UserType;
+import com.boventech.gplearn.service.LearnClassService;
+import com.boventech.gplearn.service.LearnResourceService;
+import com.boventech.gplearn.service.SchoolRollService;
+
+@Controller
+@RequestMapping(value="/learnresource")
+public class LearnResourceController extends ApplicationController {
+
+	@Autowired
+	private LearnClassService learnClassService;
+	
+	
+	@Autowired
+	private SchoolRollService schoolRollService;
+	
+	@Autowired
+	private LearnResourceService learnResourceService;
+	
+	
+	@RequiredPrivilege(value={Privilege.STUDENT_CLASS_RESOURCE,Privilege.TEACHER_CLASS_RESOURCE,
+						Privilege.SUBJECT_RESOURCE})	
+	@RequestMapping(value="/disciplineresources")
+	public String showDisciplineresource(HttpServletRequest request,Model model,Integer page){
+		User user = (User)request.getSession().getAttribute("currentUser");
+		User disciplineUser = null;
+		if(user.getUserType().equals(UserType.Student)){
+			//找到学科专家
+			LearnClass learnClass = schoolRollService.findByUserNewest(user).getLearnClass();
+			disciplineUser = learnClass.getLearnProject().getDiscipline().getPersonInCharge();
+		}
+		if(user.getUserType().equals(UserType.Teacher)){
+			LearnClass learnClass  = learnClassService.findByTeacher(user);
+			disciplineUser = learnClass.getLearnProject().getDiscipline().getPersonInCharge();
+		}
+		if(user.getUserType().equals(UserType.Subject_Specialists)){
+			disciplineUser=user;
+		}
+		List<LearnResource> disciplineResources=learnResourceService.listByUser(disciplineUser,page);
+		model.addAttribute("disciplineResources", disciplineResources);
+		return "role/"+backFolderNameByUserType(user.getUserType())+"/disciplineresources";
+	}
+	
+	@RequiredPrivilege(value={Privilege.STUDENT_CLASS_RESOURCE,Privilege.TEACHER_CLASS_RESOURCE,
+			Privilege.PROJECT_RESOURCE})	
+	@RequestMapping(value="/projectresources")
+	public String showProjectResources(HttpServletRequest request,Model model,Integer page){
+		User user = (User)request.getSession().getAttribute("currentUser");
+		User projectUser = null;
+		if(user.getUserType().equals(UserType.Student)){
+			LearnClass learnClass = schoolRollService.findByUserNewest(user).getLearnClass();
+			projectUser = learnClass.getLearnProject().getPersonInCharge();
+		}
+		if(user.getUserType().equals(UserType.Teacher)){
+			LearnClass learnClass  = learnClassService.findByTeacher(user);
+			projectUser = learnClass.getLearnProject().getPersonInCharge();
+		}
+		if(user.getUserType().equals(UserType.Subject_Specialists)){
+			projectUser  = user;
+		}
+		List<LearnResource> projectResources=learnResourceService.listByUser(projectUser, page);
+		model.addAttribute("projectResources", projectResources);
+		return "role/"+backFolderNameByUserType(user.getUserType())+"/projectresources";
+	}
+}

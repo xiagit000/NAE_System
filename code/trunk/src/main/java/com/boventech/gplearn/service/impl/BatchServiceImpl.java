@@ -1,0 +1,100 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.BatchDao;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.service.BatchService;
+
+@Service
+@Transactional
+public class BatchServiceImpl implements BatchService{
+    
+    @Autowired
+    private BatchDao batchDao;
+
+    @Override
+    public void save(Batch batch) {
+        batchDao.save(batch);
+    }
+
+    @Override
+    public void update(Batch batch) {
+        batchDao.update(batch);
+    }
+
+    @Override
+    public void delete(Batch batch) {
+        batchDao.delete(batch);
+    }
+
+    @Override
+    public void delete(Long id) {
+        batchDao.deleteById(id);
+    }
+
+    @Override
+    public Batch findById(Long id) {
+        return batchDao.findByID(id);
+    }
+
+    @Override
+    public List<Batch> listAll() {
+        return batchDao.listAll();
+    }
+
+    @Override
+    public boolean isExistByCode(String code) {
+        return batchDao.isExistByCode(code);
+    }
+
+    @Override
+    public boolean isExistByCodeWithoutCurrent(Batch batch) {
+        return batchDao.isExistByCodeWithoutCurrent(batch);
+    }
+
+	@Override
+	public Batch getCurrentBatch() {
+		Date date = new Date();
+		return batchDao.getCurrentBatch(date);
+	}
+
+    @Override
+    public boolean isDateConflict(Batch batch) {
+        return batchDao.isDateConflict(batch);
+    }
+
+    @Override
+    public boolean checkExist() {
+        return !batchDao.listAll().isEmpty();
+    }
+
+    @Override
+    public boolean isDateConflictWithoutCurrent(Batch batch) {
+        return batchDao.isDateConflictWithoutCurrent(batch);
+    }
+
+	@Override
+	public Batch getNowBatch() {
+		return batchDao.getNowBatch();
+	}
+
+}

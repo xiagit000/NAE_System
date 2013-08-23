@@ -1,0 +1,32 @@
+package com.boventech.gplearn.service;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.LearnCourse;
+import com.boventech.gplearn.entity.LearnPlan;
+import com.boventech.gplearn.entity.LearnSubProject;
+
+public interface LearnPlanService extends BaseService<LearnPlan, Long> {
+
+	List<LearnPlan> listWithPagination(Integer page);
+
+	boolean isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRange(
+			LearnPlan learnPlan);
+
+	boolean isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRangeWithOutCurrent(
+			LearnPlan learnPlan);
+
+	boolean isExsitByName(String name);
+
+	boolean isExsitByCode(String code);
+	
+	boolean isExsitByNameWithOutCurrent(LearnPlan learnPlan);
+	
+	boolean isExsitByCodeWithOutCurrent(LearnPlan learnPlan);
+
+
+	List<LearnCourse> listLearnCourseBylearnSubProject(
+			LearnSubProject learnSubProject);
+
+	List<LearnPlan> listAll();
+}

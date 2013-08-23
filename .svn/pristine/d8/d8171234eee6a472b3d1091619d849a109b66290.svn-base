@@ -1,0 +1,50 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.ScoringStandard;
+import com.boventech.gplearn.service.ScoringStandardService;
+
+@Controller
+@RequestMapping("scoringStandard")
+public class ScoringStandardController extends ApplicationController {
+
+    @Autowired
+    private ScoringStandardService scoringStandardService;
+
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model) {
+        if(!this.scoringStandardService.checkExist()){
+            this.scoringStandardService.save(new ScoringStandard());
+        }
+        model.addAttribute("scoringStandard", this.scoringStandardService.getDefalutStandard());
+        return "scoringStandard/index";
+    }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public String update(ModelMap model, @PathVariable String id, ScoringStandard scoringStandard,
+            final RedirectAttributes redirectAttrs) {
+        this.scoringStandardService.update(scoringStandard);
+        sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+        return "redirect:/scoringStandard";
+    }
+}

@@ -1,0 +1,286 @@
+package com.boventech.gplearn.controller;
+
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.boventech.gplearn.entity.Announcement;
+import com.boventech.gplearn.entity.BigSubject;
+import com.boventech.gplearn.entity.Constants;
+import com.boventech.gplearn.entity.Discipline;
+import com.boventech.gplearn.entity.Grade;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.LearnSubProject;
+import com.boventech.gplearn.entity.LearnThesis;
+import com.boventech.gplearn.entity.SchoolSpace;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.User.UserType;
+import com.boventech.gplearn.exception.LocalDatabaseUserNotFoundException;
+import com.boventech.gplearn.service.AnnouncementService;
+import com.boventech.gplearn.service.BigSubjectService;
+import com.boventech.gplearn.service.GradeService;
+import com.boventech.gplearn.service.ReceiverNotificationService;
+import com.boventech.gplearn.service.SchoolRollService;
+import com.boventech.gplearn.service.SchoolSpaceService;
+import com.boventech.gplearn.service.UserService;
+import com.boventech.gplearn.util.LoadProperties;
+import com.google.common.collect.Lists;
+
+@Controller
+public class CommonController extends ApplicationController{
+	
+	private static final Logger logger = LoggerFactory.getLogger(CommonController.class);
+	
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private SchoolRollService schoolRollService;
+	
+	@Autowired
+	private AnnouncementService announcementService;
+	
+	@Autowired
+	private SchoolSpaceService schoolSpaceService;
+	
+	@Autowired
+	private GradeService gradeService;
+	
+	@Autowired
+	private ReceiverNotificationService receiverNotificationService;
+	
+	
+	@Autowired
+	private BigSubjectService bigSubjectService;
+	
+	
+	@RequestMapping(value="/")
+	public String hello(HttpServletRequest request,Model model){
+		Object user=request.getSession().getAttribute("currentUser");
+		if(null == user){
+			return "common/login";
+		}
+		//根据不同权限跳向不同页面
+		User currentUser = (User)user;
+		UserType currentRole = currentUser.getUserType();
+		return getReturnPage(currentRole,model,request);
+	}
+
+	@RequestMapping(value="/login")
+	public String login(HttpServletRequest request,Model model){
+		Object user=request.getSession().getAttribute("currentUser");
+		String loginName = request.getRemoteUser();
+		User currentUser=null;
+		try {
+			currentUser = findcurrentUser(loginName);
+		} catch (LocalDatabaseUserNotFoundException e) {
+			logger.error(e.getMessage());
+			return "redirect:/";
+		}
+		if(user==null && currentUser!=null){
+			request.getSession().setAttribute("currentUser", currentUser);
+		}
+		//根据不同权限跳向不同页面
+		UserType currentRole = currentUser.getUserType();
+		return getReturnPage(currentRole,model,request);
+	}
+	
+	@RequestMapping(value="/logout")
+	public void logout(HttpServletRequest request,HttpServletResponse response){
+//		CASPlatformHttpClient client = new CASPlatformHttpClient();
+//		client.logout();
+		HttpSession session = request.getSession();
+		session.removeAttribute("siteMenu");
+		session.removeAttribute("siteItem");
+		session.removeAttribute("currentUser");
+		try {
+			String logoutURL=LoadProperties.getProperty(Constants.CAS_BASE_URL_KEY)+
+							LoadProperties.getProperty(Constants.CAS_LOGOUT_URL_KEY);
+			response.sendRedirect(logoutURL);
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		}
+	}
+	
+	private String getReturnPage(UserType currentRole,Model model,HttpServletRequest request) {
+		String returnPage="common/login";
+		if(currentRole.equals(UserType.System_Administrator)){
+			returnPage="common/admin";
+		}
+		if(currentRole.equals(UserType.Teacher)){
+			returnPage="common/teacher";
+		}
+		if(currentRole.equals(UserType.Project_Specialists)){
+			returnPage="common/project";
+		}
+		if(currentRole.equals(UserType.Province_Supervisor)){
+			returnPage="common/province";
+		}
+		if(currentRole.equals(UserType.School_Supervisor)){
+			returnPage="common/school";
+		}
+		if(currentRole.equals(UserType.Student)){
+			initStudentFirstPageDate(model,request);
+			returnPage="common/student";
+		}
+		if(currentRole.equals(UserType.Subject_Specialists)){
+			returnPage="common/discipline";
+		}
+		return returnPage;
+	}
+	
+	private void initStudentFirstPageDate(Model model,HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		User currentUser = (User)session.getAttribute("currentUser");
+		/**
+		 * TODO 初始化学生站内信
+		 */
+		//获取用户站内信信息放到session
+		Integer notificationCount = receiverNotificationService.countNoConsultNotificationByUser(currentUser);
+		request.getSession().setAttribute("unreadCount", notificationCount);
+		/**
+		 * TODO 公告初始化
+		 */
+		List<Announcement> classAs=Lists.newArrayList();
+		List<LearnThesis> learnThesisList=Lists.newArrayList();
+		List<Announcement> projectAs=Lists.newArrayList();
+		List<Announcement> sysAs = Lists.newArrayList();
+		List<Announcement> provinceAs = Lists.newArrayList();
+		List<Announcement> schoolAs=Lists.newArrayList();
+		List<Announcement> disciplineAs=Lists.newArrayList();
+		List<BigSubject> bigSubjectAs=Lists.newArrayList();
+		List<Grade> gradesList = Lists.newArrayList();
+		
+		//公告：班级公告
+		//1.找到我所在的班级
+		LearnClass learnClass = schoolRollService.findByUserNewest(currentUser).getLearnClass();
+		//2.找到班级老师
+		User teacher = learnClass.getTeacher();
+		//找到班级老师所发布的最新5条公告
+		if(!checkEntityEmpty(teacher)){
+			classAs=announcementService.listAllNewestFirstFive(teacher);
+		}
+		
+		//公告：优秀研修论文
+		
+		//公告：项目公告
+		LearnSubProject learnSubProject= learnClass.getLearnProject();
+		User projectUser = learnSubProject.getPersonInCharge();
+		if(!checkEntityEmpty(projectUser)){
+			projectAs = announcementService.listAllNewestFirstFive(projectUser);
+		}
+		
+		//公告：培训公告
+		//找到管理员最新前5条的公告
+		User systemUser = userService.findByUserType(UserType.System_Administrator);
+		sysAs = announcementService.listAllNewestFirstFive(systemUser);
+		
+		//公告 :省督导公告
+		User provinceUser=learnClass.getLearnArea().getUser();
+		if(!checkEntityEmpty(provinceUser)){
+			projectAs = announcementService.listAllNewestFirstFive(provinceUser);
+		}
+		
+		//公告：校督导公告
+		SchoolSpace schoolSpace  = schoolSpaceService.findBySchoolName(currentUser.getAccount().getSchool());
+		User schoolUser =schoolSpace.getUser();
+		if(!checkEntityEmpty(schoolUser)){
+			schoolAs = announcementService.listAllNewestFirstFive(schoolUser);
+		}
+		//公告：学科公告
+		User disciplineUser=learnClass.getLearnProject().getPersonInCharge();
+		if(!checkEntityEmpty(disciplineUser)){
+			disciplineAs = announcementService.listAllNewestFirstFive(disciplineUser);
+		}
+		
+		/**
+		 * TODO 从学习平台获取统计数据并存入数据库
+		 */
+		
+		
+		//2.获取当前班级所有学员信息
+		List<User> classMate = schoolRollService.listActiveByLearnClass(learnClass);
+		gradesList = Lists.newArrayList();
+		for(User user : classMate){
+			gradesList.add(gradeService.findByUser(user));
+		}
+		//mock统计
+		for(int i =0;i<gradesList.size();i++){
+			mockDate(gradesList, i);
+		}
+		
+		//校本研修内容
+		//1.找到学生所在学科的校本研修大主题
+		Discipline discipline = learnSubProject.getDiscipline();
+		bigSubjectAs =  bigSubjectService.listWithDisciplineInCurrentBatch(discipline);
+		
+		model.addAttribute("classAs", classAs);
+		model.addAttribute("learnThesisList", learnThesisList);
+		model.addAttribute("projectAs", projectAs);
+		model.addAttribute("sysAs", sysAs);
+		model.addAttribute("provinceAs", provinceAs);
+		model.addAttribute("schoolAs", schoolAs);
+		model.addAttribute("disciplineAs", disciplineAs);
+		model.addAttribute("bigSubjectAs", bigSubjectAs);
+		model.addAttribute("gradesList", gradesList);
+		model.addAttribute("learnClass", learnClass);
+	}
+
+	private void mockDate(List<Grade> gradesList, int i) {
+		Random rand;
+		Grade grade = gradesList.get(i);
+		Double mockDate =null;
+		DecimalFormat format=new DecimalFormat("0.00");
+		//mock 研修讨论分数
+		rand=new Random(new Date().getTime());
+		Double score=grade.getScoringStandard().getLearnDiscussProportion()*100;
+		Integer mock=rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate=mock+rand.nextDouble();
+		grade.setLearnDiscussScore(Double.valueOf(format.format(mockDate)));
+		//mock 视频分数
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getLearnVideoProportion()*100;
+		mock = rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate = mock+rand.nextDouble();
+		grade.setLearnVideoScore(Double.valueOf(format.format(mockDate)));
+		//mock 研修论文
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getLearnThesisProportion()*100;
+		mock=rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate = mock+rand.nextDouble();
+		grade.setLearnThesisScore(Double.valueOf(format.format(mockDate)));
+		//mock 平时成绩
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getUsuallyProportion()*100;
+		mock=rand.nextInt(score.intValue())-1;
+		mock=mock-1>=0?mock:0;
+		mockDate=mock+rand.nextDouble();
+		grade.setUsuallyScore(Double.valueOf(format.format(mockDate)));
+		gradesList.set(i, grade);
+	}
+
+	private User findcurrentUser(String loginName) throws LocalDatabaseUserNotFoundException{
+		User currentUser = null;
+		currentUser = userService.findByLoginName(loginName);
+		if(null == currentUser){
+			throw new LocalDatabaseUserNotFoundException();
+		}
+		return currentUser;
+	}
+}

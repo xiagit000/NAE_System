@@ -1,0 +1,127 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.GradeDao;
+import com.boventech.gplearn.dao.ScoringStandardDao;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.Grade;
+import com.boventech.gplearn.entity.ScoringStandard;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.GradeService;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+
+@Service
+@Transactional
+public class GradeServiceImpl implements GradeService {
+
+    @Autowired
+    private GradeDao gradeDao;
+
+    @Autowired
+    private ScoringStandardDao scoringStandardDao;
+
+    @Override
+    public void save(Grade t) {
+        this.gradeDao.save(t);
+    }
+
+    @Override
+    public void delete(Grade t) {
+        this.gradeDao.delete(t);
+    }
+
+    @Override
+    public void delete(Long id) {
+        this.gradeDao.deleteById(id);
+    }
+
+    @Override
+    public void update(Grade t) {
+        this.gradeDao.update(t);
+    }
+
+    @Override
+    public Grade findById(Long id) {
+        return this.gradeDao.findByID(id);
+    }
+
+    @Override
+    public List<Grade> listAllWithPagnate(Integer page) {
+        return this.gradeDao.listAllWithPagnate(page);
+    }
+
+    @Override
+    public Grade findByUser(User user) {
+        return this.gradeDao.findByUser(user);
+    }
+
+    @Override
+    public List<Grade> generateGrades(List<User> users,EnrollmentPlan enrollmentPlan) {
+        List<Grade> grades = new ArrayList<Grade>();
+        for (User user : users) {
+            ScoringStandard scoringStandard = this.scoringStandardDao.getStandardByBatch(user.getBatch());
+            Grade grade = new Grade();
+            grade.setLearnClassId(enrollmentPlan.getLearnClass().getId());
+            grade.setUser(user);
+            grade.setScoringStandard(scoringStandard);
+            grade.setUsuallyScore(scoringStandard.getUsuallyProportion()*100);
+            grades.add(grade);
+        }
+        return grades;
+    }
+
+    @Override
+    public void save(List<Grade> grades) {
+        this.gradeDao.save(grades);
+    }
+
+	@Override
+	public List<Grade> listWithPaginationByLearnClassId(Long id,Integer page) {
+		return gradeDao.listWithPaginationByLearnClassId(id, page);
+	}
+
+    @Override
+    public List<Grade> search(Integer page,Long batchId, Long learnClassId) {
+        return this.gradeDao.search(page,batchId,learnClassId);
+    }
+
+    @Override
+    public List<Grade> findByUsers(List<User> users) {
+        List<Grade> grades=Lists.transform(users, gradeConverter);  
+        return grades;
+    }
+    
+    Function<User, Grade> gradeConverter=new Function<User, Grade>(){
+        @Override  
+        public Grade apply(User user) {  
+            return gradeDao.findByUser(user);  
+        }  
+    };
+
+
+    @Override
+    public List<Grade> search(Long batchId, Long learnClassId) {
+        return this.gradeDao.search(batchId,learnClassId);
+    }
+    
+}

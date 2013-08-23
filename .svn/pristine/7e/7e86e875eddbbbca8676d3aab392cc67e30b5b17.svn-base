@@ -1,0 +1,51 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.ScoringStandardDao;
+import com.boventech.gplearn.entity.ScoringStandard;
+import com.boventech.gplearn.service.ScoringStandardService;
+
+@Service
+@Transactional
+public class ScoringStandardServiceImpl implements ScoringStandardService{
+    
+    @Autowired
+    private ScoringStandardDao scoringStandardDao;
+
+    @Override
+    public void update(ScoringStandard scoringStandard) {
+        this.scoringStandardDao.update(scoringStandard);
+    }
+
+    @Override
+    public ScoringStandard getDefalutStandard() {
+        return this.scoringStandardDao.getDefalutStandard();
+    }
+
+    @Override
+    public boolean checkExist() {
+        return this.scoringStandardDao.checkExist();
+    }
+
+    @Override
+    public void save(ScoringStandard scoringStandard) {
+        this.scoringStandardDao.save(scoringStandard);
+    }
+
+}

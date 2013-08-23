@@ -1,0 +1,128 @@
+package com.boventech.gplearn.controller;
+
+import java.text.SimpleDateFormat;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.BigSubject;
+import com.boventech.gplearn.entity.LearnThesis;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.BigSubjectService;
+import com.boventech.gplearn.service.LearnThesisService;
+
+@Controller
+@RequestMapping(value="/learnthesis")
+public class LearnThesisController extends ApplicationController {
+
+	@Autowired
+	private LearnThesisService learnThesisService;
+	
+	@Autowired
+	private BigSubjectService bigSubjectService;
+	
+	@Autowired
+	private BatchService batchService;
+	
+	@RequestMapping()
+	public String index(Model model,Integer page){
+		List<LearnThesis> list =learnThesisService.listWithPagination(page);
+		model.addAttribute("list", list);
+		return "learnthesis/index";
+	}
+	
+	@RequestMapping(value="/create")
+	public String create(Model model,RedirectAttributes redirectAttr){
+		if (null == batchService.getCurrentBatch()) {
+			sendErrorMessageWhenRedirect(redirectAttr,
+					"learnPlan.currentbatch.null");
+			return "redirect:/batch";
+		}
+		initSelectData(model);
+		return "learnthesis/create";
+	}
+	
+	@RequestMapping(method=RequestMethod.POST)
+	public String save(LearnThesis learnThesis,Long bigSubjectId,RedirectAttributes redirectAttr,Model model){
+		BigSubject selectedBigSubject=bigSubjectService.findById(bigSubjectId);
+		if(checkEntityEmpty(selectedBigSubject)){
+			return "error/404";
+		}
+		learnThesis.setBigSubject(selectedBigSubject);
+		if(!learnThesis.checkDatetime()){
+			SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd");
+			sendErrorMessageWithParameter(model, "begin.end.datetime.validate", sdf.format(learnThesis.getBeginTime()),sdf.format(learnThesis.getSubmitTime()));
+			initSelectData(model);
+			model.addAttribute("learnThesis", learnThesis);
+			return "learnthesis/create";
+		}
+		
+		learnThesisService.save(learnThesis);
+		sendNoticeWhenRedirect(redirectAttr,"common.add.success");
+		return "redirect:/learnthesis";
+	}
+	
+	@RequestMapping(value="/{id}/update")
+	public String edit(@PathVariable Long id,Model model){
+		LearnThesis learnThesis = learnThesisService.findById(id);
+		if(checkEntityEmpty(learnThesis)){
+			return "error/404";
+		}
+		initSelectData(model);
+		model.addAttribute("learnThesis", learnThesis);
+		return "learnthesis/edit";
+	}
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.PUT)
+	public String update(LearnThesis learnThesis,Long bigSubjectId,RedirectAttributes redirectAttr,Model model){
+		BigSubject selectedBigSubject=bigSubjectService.findById(bigSubjectId);
+		if(checkEntityEmpty(selectedBigSubject)){
+			return "error/404";
+		}
+		learnThesis.setBigSubject(selectedBigSubject);
+		if(!learnThesis.checkDatetime()){
+			SimpleDateFormat sdf= new SimpleDateFormat("yyyy-MM-dd");
+			sendErrorMessageWithParameter(model, "begin.end.datetime.validate", sdf.format(learnThesis.getBeginTime()),sdf.format(learnThesis.getSubmitTime()));
+			initSelectData(model);
+			model.addAttribute("learnThesis", learnThesis);
+			return "learnthesis/edit";
+		}
+		learnThesisService.update(learnThesis);
+		sendNoticeWhenRedirect(redirectAttr, "common.update.success");
+		return "redirect:/learnthesis";
+	}
+	
+	@RequestMapping(value="/{id}")
+	public String show(@PathVariable Long id,Model model){
+		LearnThesis learnThesis  = learnThesisService.findById(id);
+		if(checkEntityEmpty(learnThesis)){
+			return "error/404";
+		}
+		model.addAttribute("learnThesis", learnThesis);
+		return "learnthesis/show";
+	}
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
+	public String destroy(@PathVariable Long id,RedirectAttributes redirectAttr){
+		LearnThesis learnThesis = learnThesisService.findById(id);
+		if(checkEntityEmpty(learnThesis)){
+			return "error/404";
+		}
+		learnThesisService.delete(id);
+		sendNoticeWhenRedirect(redirectAttr, "common.destroy.success");
+		return "redirect:/learnthesis";
+	}
+	
+	
+	private void initSelectData(Model model){
+		List<BigSubject> bigSubjectList=bigSubjectService.listWithBatch(batchService.getCurrentBatch());
+		model.addAttribute("bigSubjectList", bigSubjectList);
+		model.addAttribute("currentBatch", batchService.getCurrentBatch());
+	}
+}

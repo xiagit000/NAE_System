@@ -1,0 +1,107 @@
+package com.boventech.gplearn.entity;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.boventech.gplearn.entity.User.UserType;
+
+
+
+public enum Privilege {
+
+	
+	//系统管理员权限
+	SYSTEM_ACCOUNT(UserType.System_Administrator),
+	SYSTEM_BATCH(UserType.System_Administrator),
+	SYSTEM_BIGSUBJECT(UserType.System_Administrator),
+	SYSTEM_DISCIPLINE(UserType.System_Administrator),
+	SYSTEM_ENROLLMENTPLAN(UserType.System_Administrator),
+	SYSTEM_LEARNAREA(UserType.System_Administrator),
+	SYSTEM_LEARNCOURSE(UserType.System_Administrator),
+	SYSTEM_LEARNCLASS(UserType.System_Administrator),
+	SYSTEM_LEARNLEVEL(UserType.System_Administrator),
+	SYSTEM_LEARNPLAN(UserType.System_Administrator),
+	SYSTEM_LEARNPROJECT(UserType.System_Administrator),
+	SYSTEM_LEARNSPEACIALTY(UserType.System_Administrator),
+	SYSTEM_LEARNSUBPROJECT(UserType.System_Administrator),
+	SYSTEM_LEARNTHESIS(UserType.System_Administrator),
+	SYSTEM_SCHOOLROLL(UserType.System_Administrator),
+	SYSTEM_SMALLTOPIC(UserType.System_Administrator),
+	SYSTEM_USER(UserType.System_Administrator),
+	
+	//省督导员权限
+	PROVINCE_USER_ACCOUNT(UserType.Province_Supervisor),
+	PROVINCE_SEARCH(UserType.Province_Supervisor),
+	PROVINCE_ANNOUNCEMENT(UserType.Province_Supervisor),
+	
+	//校督导员
+	SCHOOL_USER_ACCOUNT(UserType.School_Supervisor),
+	SCHOOL_SEARCH(UserType.School_Supervisor),
+	SCHOOL_ANNOUNCEMENT(UserType.School_Supervisor),
+	
+	//学科专家
+	SUBJECT_USER_ACCOUNT(UserType.Subject_Specialists),
+	SUBJECT_SEARCH(UserType.Subject_Specialists),
+	SUBJECT_RESOURCE(UserType.Subject_Specialists),
+	SUBJECT_ANNOUNCEMENT(UserType.Subject_Specialists),
+	
+	//项目专家
+	PROJECT_USER_ACCOUNT(UserType.Project_Specialists),
+	PROJECT_SEARCH(UserType.Project_Specialists),
+	PROJECT_RESOURCE(UserType.Project_Specialists),
+	PROJECT_ANNOUNCEMENT(UserType.Project_Specialists),
+	
+	//辅导老师
+	TEACHER_USER_ACCOUNT(UserType.Teacher),
+	TEACHER_SEARCH(UserType.Teacher),
+	TEACHER_WORK_TOTAL(UserType.Teacher),
+	TEACHER_ANNOUNCEMENT(UserType.Teacher),
+	TEACHER_NORMAL_SCORE(UserType.Teacher),
+	TEACHER_LEARNTHESIS(UserType.Teacher),
+	TEACHER_CLASS_RESOURCE(UserType.Teacher),
+	TEACHER_DISCIPLINE_RESOURCE(UserType.Teacher),
+	TEACHER_PROJECT_RESOURCE(UserType.Teacher),
+	TEACHER_CLASS_SPACE(UserType.Teacher),
+	TEACHER_SCHOOL_SPACE(UserType.Teacher),
+	TEACHER_XBYX_SPACE(UserType.Teacher),
+	TEACHER_ASK(UserType.Teacher),
+	
+	//学生
+	STUDENT_USER_ACCOUNT(UserType.Student),
+	STUDENT_CLASS_INFO(UserType.Student),
+	STUDENT_LEARNTHSIS_SUBMIT(UserType.Student),
+	STUDENT_SCORE_SEARCH(UserType.Student),
+	STUDENT_CLASS_RESOURCE(UserType.Student),
+	STUDENT_DISCIPLINE_RESOURCE(UserType.Student),
+	STUDENT_PROJECT_RESOURCE(UserType.Student),
+	STUDENT_CLASS_SPACE(UserType.Student),
+	STUDENT_SCHOOL_SPACE(UserType.Student),
+	STUDENT_XBYX_SPACE(UserType.Student),
+	STUDENT_ASK(UserType.Student);
+	
+	
+	
+	private UserType group;
+	
+	private Privilege(UserType userType){
+		this.group=userType;
+	}
+	
+	public UserType getGroup() {
+        return group;
+    }
+
+    public void setGroup(UserType group) {
+        this.group = group;
+    }
+    
+    public static List<Privilege> getPrivileges(UserType group) {
+        List<Privilege> privileges = new ArrayList<Privilege>();
+        for (Privilege p : Privilege.values()) {
+            if (group.equals(p.getGroup())) {
+                privileges.add(p);
+            }
+        }
+        return privileges;
+    }
+}

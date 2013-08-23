@@ -1,0 +1,156 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.LearnClassDao;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.Discipline;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.LearnSubProject;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.exception.StudySpaceClassRoomCreateFaildException;
+import com.boventech.gplearn.exception.StudySpaceClassRoomDestroyFaildException;
+import com.boventech.gplearn.service.LearnClassService;
+import com.boventech.gplearn.util.StudyPlatformHttpClient;
+
+@Service
+@Transactional
+public class LearnClassServiceImpl implements LearnClassService {
+
+    @Autowired
+    private LearnClassDao learnClassDao;
+    
+
+    @Override
+    public void save(LearnClass t) {
+        this.learnClassDao.save(t);
+    }
+
+    @Override
+    public void delete(LearnClass t) {
+        this.learnClassDao.delete(t);
+    }
+
+    @Override
+    public void delete(Long id) {
+        this.learnClassDao.deleteById(id);
+    }
+
+    @Override
+    public void update(LearnClass t) {
+        this.learnClassDao.update(t);
+    }
+
+    @Override
+    public LearnClass findById(Long id) {
+        return this.learnClassDao.findByID(id);
+    }
+
+    @Override
+    public List<LearnClass> listAll() {
+        return this.learnClassDao.listAll();
+    }
+
+    @Override
+    public boolean isExistByCode(String code) {
+        return this.learnClassDao.isExistByCode(code);
+    }
+
+    @Override
+    public boolean isExistByCodeWhitoutCurrent(LearnClass learnClass) {
+        return this.learnClassDao.isExistByCodeWhitoutCurrent(learnClass);
+    }
+
+    @Override
+    public List<LearnClass> listEnable() {
+        return this.learnClassDao.listEnable();
+    }
+
+    @Override
+    public boolean checkExist() {
+        return !this.learnClassDao.listEnable().isEmpty();
+    }
+
+	@Override
+	public LearnClass findByCode(String code) {
+		return learnClassDao.findByCode(code);
+	}
+
+	@Transactional(rollbackFor=StudySpaceClassRoomCreateFaildException.class)
+	@Override
+	public void saveLearnClass(LearnClass learnClass) throws StudySpaceClassRoomCreateFaildException {
+		save(learnClass);
+        LearnClass savedLearnClass =findByCode(learnClass.getCode());
+        createLearnClassInStudySpace(savedLearnClass,savedLearnClass.getLearnProject().getDiscipline());
+		
+	}
+	
+	
+
+	@Transactional(rollbackFor=StudySpaceClassRoomDestroyFaildException.class)
+	@Override
+	public void deleteLearnClass(Long id) throws StudySpaceClassRoomDestroyFaildException {
+		destroyLearnClassInStudySpace(findById(id));
+		delete(id);
+    }
+	
+	
+	 /**
+     * TODO 2创建班级成功后，推送到学习平台[集成完成]
+     * @throws StudySpaceClassRoomCreateFaildException 
+     */
+    private void createLearnClassInStudySpace(LearnClass learnClass,Discipline discipline) throws StudySpaceClassRoomCreateFaildException{
+    	StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+    	String disciplineId = discipline.getId().toString();
+    	String title = learnClass.getAllName()+"["+learnClass.getCode()+"]";
+    	String learnClassAccessSpaceId=client.createClassRoomInStudySpace(disciplineId,title);
+    	if(null!=learnClassAccessSpaceId){
+    		learnClass.setLearnClassStudySpaceId(learnClassAccessSpaceId);
+    		update(learnClass);
+    	}else{
+    		throw new StudySpaceClassRoomCreateFaildException();
+    	}
+    }
+    
+    /**
+     * TODO 3删除班级成功后，推送到学习平台[集成完成]
+     * @throws StudySpaceClassRoomDestroyFaildException 
+     */
+    private void destroyLearnClassInStudySpace(LearnClass learnClass) throws StudySpaceClassRoomDestroyFaildException{
+    	StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+    	String disciplineId=learnClass.getLearnProject().getDiscipline().getId().toString();
+    	Integer statusCode = client.destroyClassRoomInStudySpace(disciplineId,learnClass.getLearnClassStudySpaceId());
+    	if(statusCode!=200){
+    		throw new StudySpaceClassRoomDestroyFaildException();
+    	}
+    }
+
+	@Override
+	public LearnClass findByTeacher(User user) {
+		return this.learnClassDao.findByTeacher(user);
+	}
+
+	@Override
+	public List<LearnClass> listByLearnSubProjectInCurrentBatch(
+			LearnSubProject learnSubProject, Batch currentBatch) {
+		return learnClassDao.listByLearnSubProjectInCurrentBatch(learnSubProject,currentBatch);
+	}
+
+}

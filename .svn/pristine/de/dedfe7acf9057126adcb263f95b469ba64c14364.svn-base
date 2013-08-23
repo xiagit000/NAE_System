@@ -1,0 +1,113 @@
+package com.boventech.gplearn.controller;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import sun.misc.BASE64Encoder;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.entity.SchoolSpace;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.User.UserType;
+import com.boventech.gplearn.exception.UserInfoPushToStudySpaceFaildException;
+import com.boventech.gplearn.exception.UserInfoSendCASFaildException;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.SchoolSpaceService;
+
+@Controller
+@RequestMapping(value="/schoolspace")
+public class SchoolSpaceController extends ApplicationController {
+	
+	private static final Logger logger = LoggerFactory.getLogger(SchoolSpaceController.class);
+
+	@Autowired
+	private SchoolSpaceService schooSpaceService;
+	
+	@Autowired
+	private BatchService batchService;
+	
+	@RequiredPrivilege(value={Privilege.SYSTEM_USER})
+	@RequestMapping
+	public String index(RedirectAttributes redirectAttr,Model model,Integer page,HttpServletRequest request){
+		setSiteBarActive("jw","schoolspace",request);
+		Batch batch=batchService.getCurrentBatch();
+		if(checkEntityEmpty(batch)){
+			sendErrorMessageWhenRedirect(redirectAttr,"learnPlan.currentbatch.null");
+			return "redirect:/batch";
+		}
+		List<SchoolSpace> list  =schooSpaceService.listWithPagination(page);
+		model.addAttribute("list", list);
+		return "schoolspace/index";
+	}
+	
+	@RequiredPrivilege(value={Privilege.SYSTEM_USER})
+	@RequestMapping(value="/{id}/personincharge/create")
+	public String createPersonIncharge(@PathVariable Long id,Model model){
+		SchoolSpace schoolSpace = schooSpaceService.findById(id);
+		if(checkEntityEmpty(schoolSpace)){
+			return "error/404";
+		}
+		model.addAttribute("schoolSpace",schoolSpace);
+		model.addAttribute("prefix", personInchargeLoginNamePrefix());
+		return "schoolspace/personincharge/create";
+	}
+	
+	@RequiredPrivilege(value={Privilege.SYSTEM_USER})
+	@RequestMapping(value="/{id}/personincharge",method=RequestMethod.POST)
+	public String savePersonIncharge(User user,String prefix,@PathVariable Long id,RedirectAttributes redirect){
+		SchoolSpace schoolSpace = schooSpaceService.findById(id);
+		if(checkEntityEmpty(schoolSpace)){
+			return "error/404";
+		}
+		Batch batch = batchService.getCurrentBatch();
+		if(checkEntityEmpty(batch)){
+			sendErrorMessageWhenRedirect(redirect,
+			"learnPlan.currentbatch.null");
+			return "redirect:/batch";
+		}
+		user.setId(null);
+		user.setUserType(UserType.School_Supervisor);
+		user.setBatch(batch);
+		user.setPassword(new BASE64Encoder().encode(user.getPassword().getBytes()));
+		user.setLoginName(prefix);
+		user.setActive(true);
+		try {
+			schooSpaceService.saveSchooSpaceUser(schoolSpace,user);
+			sendNoticeWhenRedirect(redirect, "common.add.success");
+		} catch (UserInfoSendCASFaildException e) {
+			logger.error(e.getMessage());
+			sendErrorMessageWhenRedirect(redirect, "user.cas.sendError");
+		} catch (UserInfoPushToStudySpaceFaildException e) {
+			logger.error(e.getMessage());
+			sendErrorMessageWhenRedirect(redirect, "user.space.sendError");
+		}
+		return "redirect:/schoolspace";
+	}
+	
+	@RequiredPrivilege(value={Privilege.SYSTEM_USER})
+	@RequestMapping(value="/{id}/personincharge")
+	public String showpersonincharge(@PathVariable Long id,Model model){
+		SchoolSpace schoolSpace = schooSpaceService.findById(id);
+		if(checkEntityEmpty(schoolSpace) || checkEntityEmpty(schoolSpace.getUser())){
+			return "error/404";
+		}
+		model.addAttribute("schoolSpace", schoolSpace);
+		model.addAttribute("user", schoolSpace.getUser());
+		return "schoolspace/personincharge/show";
+	}
+	
+	
+}

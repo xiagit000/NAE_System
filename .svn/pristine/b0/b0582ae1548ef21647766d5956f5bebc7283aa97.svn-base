@@ -1,0 +1,67 @@
+package com.boventech.gplearn.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.LearnThesisDao;
+import com.boventech.gplearn.entity.BigSubject;
+import com.boventech.gplearn.entity.LearnThesis;
+import com.boventech.gplearn.service.LearnThesisService;
+import com.google.common.collect.Lists;
+
+@Service
+@Transactional
+public class LearnThesisServiceImpl implements LearnThesisService {
+	
+	@Autowired
+	private LearnThesisDao learnThesisDao;
+
+	@Override
+	public List<LearnThesis> listWithPagination(Integer page) {
+		return learnThesisDao.listWithPagination(page);
+	}
+
+	@Override
+	public void delete(LearnThesis t) {
+		learnThesisDao.delete(t);
+	}
+
+	@Override
+	public void delete(Long id) {
+		learnThesisDao.deleteById(id);
+	}
+
+	@Override
+	public LearnThesis findById(Long id) {
+		return learnThesisDao.findByID(id);
+	}
+
+	@Override
+	public void save(LearnThesis t) {
+		learnThesisDao.save(t);
+	}
+
+	@Override
+	public void update(LearnThesis t) {
+		learnThesisDao.update(t);
+	}
+
+	@Override
+	public List<LearnThesis> listEnableThesisWithBigSubjects(
+			List<BigSubject> bigsubjects) {
+		Date date =new Date();
+		List<LearnThesis> result=Lists.newArrayList();
+		for(BigSubject bigsubject : bigsubjects){
+			List<LearnThesis> list=learnThesisDao.listEnableThesisByBigSubject(bigsubject,date);
+			for(int i =0;i<list.size();i++){
+				result.add(list.get(i));
+			}
+		}
+		return result;
+	}
+
+}

@@ -1,0 +1,23 @@
+#STUDYSPACE URL
+url=http://122.204.161.78/
+x_account=_zjyfxl@ccnu
+x_secret=_zjyfxl@20130513
+create.spaceurl=wsintegrate/course/create
+create.space.classroom=wsintegrate/group/create
+update.space.classroom=wsintegrate/group/rename
+delete.space.classroom=wsintegrate/group/delete
+space.add.user=wsintegrate/user/join/course
+space.remove.user=wsintegrate/user/unjoin/course
+space.classroom.add.user=wsintegrate/user/join/group
+space.classroom.remove.user=wsintegrate/user/unjoin/group
+
+#cas
+cas.url=http://202.114.32.203/
+cas.x_account=zjyfxl
+cas.x_domainid=2
+cas.xsecret=zjyfxl@20130502
+cas.add.user=cas-rs/service/user/add
+cas.select.user=cas-rs/service/user/query/
+cas.update.user=cas-rs/service/user/update
+cas.destroy.user=cas-rs/service/user/delete
+cas.logout=cas/logout

@@ -1,0 +1,288 @@
+
+html,body{
+	background:url(../images/logbg.jpg) top center no-repeat #5FA4CE;	
+	height:100%;
+}
+
+
+.wrap{
+	width:1000px;
+	margin:0 auto;
+	background:#fff;
+}
+.header{
+	background:url(../images/lgheader.jpg) repeat-x;
+	height:96px;
+	padding:30px 0 0 0;
+}
+
+
+.footer{
+	background:#E7EFF2;
+	height:35px;
+	line-height:30px;
+	text-align:center;
+	color:#636363;
+	margin-top:25px;
+}
+.content{
+	min-height:480px;
+	margin:0 auto;
+	padding:0 15px;
+	
+}
+
+.enter{
+	background:url(../images/enter_bg.jpg) no-repeat;
+
+}
+.enter a{
+	width:266px;
+	height:66px;
+	display:block;
+	margin:123px 0 0 43px;
+	background:url(../images/enter.jpg) no-repeat;
+}
+.enter a:hover{
+	background:url(../images/enter_hover.jpg) no-repeat;
+}
+
+
+.location{
+	line-height:35px;
+	padding-left:25px;
+	background:url("../images/flag.png") 3px 10px no-repeat;
+}
+
+.font{
+	text-indent:25px;
+	line-height:25px;
+}
+
+
+
+.clear{
+	clear:both;
+}
+
+.more{
+	color:#296E97;
+	font-size:12px;
+	padding-right:10px;
+	font-weight:500;
+}
+a:hover{
+	text-decoration:underline;
+}
+
+
+.new,.new_right,.enter,.inform,.add,.tabs{
+	border:1px solid #CBD8E0;
+	margin-top:10px;
+	overflow:hidden;
+}
+.new,.enter{
+	height:290px;
+}
+.new_right{
+	height:285px;
+}
+.new{
+	width:230px;
+}
+.list{
+	margin-top:8px;
+
+}
+.list li,.lists li {
+    background: url("../images/liDot.png") no-repeat scroll 6px 8px transparent;
+    height: 22px;
+    line-height: 22px;
+    overflow: hidden;
+    padding: 3px 0 3px 15px;
+	text-overflow: ellipsis;
+    white-space: nowrap;
+	width:215px;
+}
+.lists{
+	width:270px;
+	margin-top:10px;
+	padding-bottom:10px;
+}
+.list li  a{
+	width:215px;	
+}
+.new_right{
+	width:395px;
+	margin:10px 10px 0 10px;
+	padding:5px 5px 0 5px;
+}
+.enter{
+	width:300px;
+}
+
+a, a:link, a:visited {
+    color: #535353;
+    text-decoration: none;
+}
+a, a:link, a:visited {
+    color: #535353;
+    text-decoration: none;
+}
+a:hover{
+	text-decoration:underline;
+	color:#0574A7;
+}
+h1.title,.add_span,.tabs_title {
+    height: 22px;
+    line-height: 22px;
+	color: #125F81;
+    font-size: 14px;
+    font-weight: bold;
+}
+h1.title,.tabs_title{
+    padding: 4px 10px;
+}
+
+h1.title,.tabs_title{
+    background: url("../images/bg_title.jpg") no-repeat scroll right center transparent;
+
+}
+.title span,.add_span{
+	background: url("../images/bestseller.png") no-repeat scroll 0 center transparent;
+    padding-left: 20px;
+}
+.inform{
+	width:475px;
+	margin-top:10px;
+	height:220px;
+	overflow:hidden;
+}
+h2.title {
+    color: #125F81;
+    font-weight: bold;
+    height: 25px;
+    line-height: 25px;
+    overflow: hidden;
+}
+.new_right p{
+	line-height:20px;
+	text-indent:20px;
+}
+.new_right img{
+	width:400px;
+	height:210px;
+}
+.fl,.new,.new_right,.enter,.inform,.inform img {
+	float:left;
+}
+.fr,.more{
+	float:right;
+	display:inline;
+}
+.img{
+	height: auto;
+    width: 140px;
+	margin-right:10px;
+}
+.img a{
+	display:block;
+}
+.img a img {
+    display: inline;
+    height: 94px;
+    margin-bottom: 10px;
+    padding: 3px;
+    width: 133px;
+	padding:50px 0 0 30px;
+}
+.add{
+	line-height:30px;
+	margin:10px 0;
+}
+.add_title{
+	background:url("../images/til.jpg") repeat;
+	margin-bottom:1px;
+	padding:0 0 0 10px;
+	height:30px;
+	line-height:30px;
+}
+.table{
+	width:100%;
+}
+
+.table th{
+	background:#F2F2F2;
+	height:30px;
+	line-height:30px;
+
+}
+.table td,.table th{
+	text-align:left;
+	padding-left:8px;
+
+}
+.table td{
+	color:#000;
+}
+select{
+	vertical-align:middle;
+}
+
+.tabUl {
+    float: left;
+    height: 27px;
+    left: 0;
+    padding-top: 4px;
+    position: relative;
+    top: -5px;
+    width: auto;
+}
+
+.tabUl li.tabOn {
+    background: url("../images/tab_On.jpg") no-repeat scroll center center transparent;
+}
+.tabUl li {
+    background: none repeat scroll center top transparent;
+    cursor: pointer;
+    float: left;
+    font-weight: bold;
+    line-height: 27px;
+    margin: 0 5px;
+    text-align: center;
+    width: 71px;
+}
+
+.clearfix:after {
+    clear: both;
+    content: ".";
+    display: block;
+    height: 0;
+    visibility: hidden;
+}
+.p10 {
+    padding: 10px;
+}
+
+ul.listPhoto li {
+    display: inline-block;
+    float: left;
+    padding: 5px 5px 0;
+    text-align: center;
+    width: 120px;
+}
+
+ul.listPhoto li img {
+    border: 1px solid #C9D0E0;
+    display: inline;
+    height: 70px;
+    padding: 3px;
+    width: 100px;
+}
+
+ul.listPhoto li span {
+    float: left;
+    line-height: 25px;
+    text-align: center;
+    width: 120px;
+}

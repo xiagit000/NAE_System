@@ -1,0 +1,317 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.Account;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.Grade;
+import com.boventech.gplearn.entity.Graduate;
+import com.boventech.gplearn.entity.SchoolRoll;
+import com.boventech.gplearn.entity.SchoolSpace;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.exception.UserInfoPushToStudySpaceClassRoomFaildException;
+import com.boventech.gplearn.exception.UserInfoPushToStudySpaceFaildException;
+import com.boventech.gplearn.exception.UserInfoSendCASFaildException;
+import com.boventech.gplearn.service.AccountService;
+import com.boventech.gplearn.service.EnrollmentPlanService;
+import com.boventech.gplearn.service.GradeService;
+import com.boventech.gplearn.service.GraduateService;
+import com.boventech.gplearn.service.GraduateStandardService;
+import com.boventech.gplearn.service.SchoolRollService;
+import com.boventech.gplearn.service.SchoolSpaceService;
+import com.boventech.gplearn.service.ScoringStandardService;
+import com.boventech.gplearn.service.UserService;
+import com.boventech.gplearn.util.CASPlatformHttpClient;
+import com.boventech.gplearn.util.FileSender;
+import com.boventech.gplearn.util.StudyPlatformHttpClient;
+
+@Controller
+@RequestMapping(value = "/account")
+public class AccountController extends ApplicationController {
+
+    private Logger logger = Logger.getLogger(this.getClass().getName());
+
+    @Autowired
+    private AccountService accountService;
+
+    @Autowired
+    private EnrollmentPlanService enrollmentPlanService;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private SchoolRollService schoolRollService;
+    
+    @Autowired
+    private SchoolSpaceService schoolSpaceService;
+    
+    @Autowired
+    private GradeService gradeService;
+    
+    @Autowired
+    private GraduateService graduateService;
+    
+    @Autowired
+    private ScoringStandardService scoringStandardService;
+    
+    @Autowired
+    private GraduateStandardService graduateStandardService;
+
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(Model model) {
+        model.addAttribute("accounts", this.accountService.listAll());
+        return "account/index";
+    }
+
+    @RequestMapping(method = RequestMethod.POST)
+    public String create(Model model, final RedirectAttributes redirectAttrs, Account account) {
+        if (this.accountService.isExistByIdNumber(account.getIdNumber())) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", account.getIdNumber());
+            model.addAttribute("account", account);
+            return "account/add";
+        }
+        this.accountService.save(account);
+        sendNoticeWhenRedirect(redirectAttrs, "common.add.success");
+        return "redirect:/account";
+    }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public String update(Model model, final RedirectAttributes redirectAttrs, @PathVariable String id,
+            Account account) {
+        if (this.accountService.isExistByIdNumberWithoutCurrent(account)) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", account.getIdNumber());
+            model.addAttribute("account", account);
+            return "account/edit";
+        }
+        this.accountService.update(account);
+        sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+        return "redirect:/account";
+    }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public String destroy(Model model, @PathVariable String id, final RedirectAttributes redirectAttrs) {
+        try {
+            this.accountService.delete(Long.parseLong(id));
+            sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+        } catch (Exception e) {
+            logger.info(e.getMessage());
+            sendErrorMessageWhenRedirect(redirectAttrs, "common.hasnode.warn");
+            return "redirect:/account";
+        }
+        return "redirect:/account";
+    }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public String show(Model model, @PathVariable String id) {
+        model.addAttribute("account", this.accountService.findById(Long.parseLong(id)));
+        return "account/show";
+    }
+
+    @RequestMapping(value = "/{id}/edit", method = RequestMethod.GET)
+    public String edit(Model model, @PathVariable String id, final RedirectAttributes redirectAttrs) {
+        if (isNull(redirectAttrs, model, true, id)) {
+            return "redirect:/account";
+        }
+        return "account/edit";
+    }
+
+    @RequestMapping(value = "/new", method = RequestMethod.GET)
+    public String editNew() {
+        return "account/add";
+    }
+
+    @RequestMapping(value = "/bulkImport", method = RequestMethod.GET)
+    public String bulkImport() {
+        return "account/bulkImport/index";
+    }
+
+    @RequestMapping(value = "/bulkImport/methodOne", method = RequestMethod.GET)
+    public String methodOne(Model model, final RedirectAttributes redirectAttrs) {
+        if (!this.enrollmentPlanService.checkExist()) {
+            sendErrorMessageWhenRedirect(redirectAttrs, "account.enrollmentPlan.list.empty");
+            return "redirect:/enrollmentPlan";
+        }
+        model.addAttribute("enrollmentPlans", this.enrollmentPlanService.listEnableImport());
+        return "account/bulkImport/methodOne/index";
+    }
+
+    @RequestMapping(value = "/bulkImport/methodTwo", method = RequestMethod.GET)
+    public String methodTwo() {
+        return "account/bulkImport/methodTwo/index";
+    }
+
+    /**
+     * 根据已有的招生计划导入学生
+     */
+    @Transactional
+    @RequestMapping(value = "/bulkImport/methodOne", method = RequestMethod.POST)
+    public String importExcel(final RedirectAttributes redirectAttrs, Model model,
+            @RequestParam MultipartFile file, String enrollmentPlanId) throws IOException {
+        List<Account> accounts = null;
+        EnrollmentPlan enrollmentPlan = this.enrollmentPlanService.findById(Long.parseLong(enrollmentPlanId));
+        
+        //验证评分标准是否添加
+        if(!this.scoringStandardService.checkExistByBatch(enrollmentPlan.getBatch())){
+            sendWarningWhenRedirect(redirectAttrs, "account.scoringStandard.empty");
+            return "redirect:/scoringStandard";
+        }
+        
+        //验证结业标准是否添加
+        if(!this.graduateStandardService.checkeExistByBatch(enrollmentPlan.getBatch())){
+            sendWarningWhenRedirect(redirectAttrs, "account.graduateStandard.empty");
+            return "redirect:/graduateStandard";
+        }
+        
+        try {
+            accounts = this.accountService.readXls(file.getInputStream());
+            if (this.accountService.validateAccounts(accounts, enrollmentPlan) != 0) {
+                sendErrorMessageWithParameter(model, "account.import.exsit",
+                        this.accountService.validateAccounts(accounts, enrollmentPlan));
+                model.addAttribute("enrollmentPlans", this.enrollmentPlanService.listEnableImport());
+                return "account/bulkImport/methodOne/index";
+            }
+            this.accountService.save(accounts);
+           
+            //批量生成学校空间和账号
+            List<User> users = this.userService.generateUsers(accounts, enrollmentPlan);
+            List<SchoolSpace> schoolSpaces=this.schoolSpaceService.generateSchoolSpaces(accounts, enrollmentPlan);
+            this.schoolSpaceService.save(schoolSpaces);
+            this.userService.save(users);
+            
+            //批量生成成绩和学籍
+            List<SchoolRoll> schoolRolls=this.schoolRollService.generateSchoolRolls(users, enrollmentPlan);
+            List<Grade> grades=this.gradeService.generateGrades(users);
+            this.schoolRollService.save(schoolRolls);
+            this.gradeService.save(grades);
+            
+            //批量生成结业信息
+            List<Graduate> graduates=this.graduateService.generateGraduates(grades);
+            this.graduateService.save(graduates);
+            
+            // 2013.5.16 si.li
+            //将用户信息推送到CAS
+            pushUserToTheCAS(users);
+			
+            //将用户推送到学科空间
+            String disciplineId=enrollmentPlan.getLearnClass().getLearnProject().getDiscipline().getId().toString();
+            pushUserToTheStudySpace(users,disciplineId);
+            
+            //将用户推送到学科空间的班级小组
+            pushUserToTheStudySpaceClassRoom(users,disciplineId,enrollmentPlan.getLearnClass().getLearnClassStudySpaceId());
+            
+            sendNoticeWhenRedirect(redirectAttrs, "common.import.success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error(e.getMessage());
+            sendErrorMessage(model, "account.excel.import.error");
+            model.addAttribute("enrollmentPlans", this.enrollmentPlanService.listEnableImport());
+            return "account/bulkImport/methodOne/index";
+        }
+        return "redirect:/account";
+    }
+    
+    /**
+     * TODO 5将学科用户推送到班级小组[集成完成]
+     * @param user
+     * @param disciplineId
+     * @param learnClassAccessSpaceId
+     * @return
+     * @throws UserInfoPushToStudySpaceClassRoomFaildException 
+     */
+    private void pushUserToTheStudySpaceClassRoom(List<User> users,String disciplineId,String learnClassAccessSpaceId) throws UserInfoPushToStudySpaceClassRoomFaildException{
+    	StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+    	Integer statusCode =  0;
+    	for(User user : users){
+    		statusCode = client.createUserToStudySpaceClassRoom(user, learnClassAccessSpaceId, disciplineId);
+    		if(statusCode != 200){
+    			throw new UserInfoPushToStudySpaceClassRoomFaildException();
+    		}
+    	}
+    }
+    
+    /**
+     * TODO 6将用户推送到学科空间[集成完成]
+     * @param user
+     * @param disciplineId
+     * @param learnClassAccessSpaceId
+     * @return
+     * @throws UserInfoPushToStudySpaceFaildException 
+     */
+    private void pushUserToTheStudySpace(List<User> users,String disciplineId) throws UserInfoPushToStudySpaceFaildException{
+    	StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+    	Integer statusCode=0;
+    	for(User user: users){
+    		statusCode = client.createUserToStudySpace(user, disciplineId);
+    		if(statusCode!=200){
+    			throw new UserInfoPushToStudySpaceFaildException();
+    		}
+    	}
+    	
+    }
+    
+    /**
+     * TODO 4将账号推送到CAS平台[集成完成]
+     * @throws UserInfoSendCASFaildException 
+     */
+    private void pushUserToTheCAS(List<User> users) throws UserInfoSendCASFaildException{
+    	CASPlatformHttpClient client = new CASPlatformHttpClient();
+    	Integer statusCode=0;
+    	for(User user : users){
+    		statusCode = client.createUserToCAS(user);
+    		if(statusCode!=200){
+    			throw new UserInfoSendCASFaildException();
+    		}
+    	}
+    }
+    
+
+    @RequestMapping(value = "/bulkImport/downloadTemplate", method = RequestMethod.GET)
+    public void downloadTemplate(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String localFilePath = "/resources/template.xls";
+        String fileName = getMessage("templateName");
+        new FileSender().downLoad(request, response, localFilePath, fileName);
+    }
+
+    private boolean isNull(final RedirectAttributes redirectAttrs, Model model, boolean whithModel, String id) {
+        Account account = this.accountService.findById(Long.parseLong(id));
+        if (null == account) {
+            sendErrorMessageWithParameterWhenRedirect(redirectAttrs, "common.obj.notfound", "id:" + id);
+            return true;
+        } else {
+            if (whithModel) {
+                model.addAttribute("account", account);
+            }
+            return false;
+        }
+    }
+}

@@ -1,0 +1,55 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.boventech.gplearn.dao.CityDao;
+import com.boventech.gplearn.entity.City;
+
+@Repository
+public class CityDaoImpl extends BaseDaoImpl<City, Long> implements CityDao {
+
+    @Override
+    public List<City> getAllCities() {
+        return this.executeQueryWithoutPaging("From City where regexp(elCode,'^[0-9]*-[0-9]*$')=1");
+    }
+
+    @Override
+    public List<City> getProvinces() {
+        return this.executeQueryWithoutPaging("From City where regexp(elCode,'^[0-9]*$')=1");
+    }
+
+    @Override
+    public City getCity(String elCode) {
+    	String queryString = "FROM City WHERE elCode=?1";
+    	List<City> cities = executeQueryWithoutPaging(queryString,elCode);
+        return cities.isEmpty()?null:cities.get(0);
+    }
+
+    @Override
+    public City getProvince(String elCode) {
+        String[] args=elCode.split("-");
+        return this.executeQueryWithoutPaging("From City where elCode=?1",args[0]).get(0);
+    }
+
+    @Override
+    public List<City> getCitiesByProvince(String elCode) {
+        String[] args=elCode.split("-");
+        String expression="^"+args[0]+"-[0-9]*$";
+        return this.executeQueryWithoutPaging("From City where regexp(elCode,?1)=1",expression);
+    }
+}

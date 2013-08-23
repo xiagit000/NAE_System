@@ -1,0 +1,25 @@
+package com.boventech.gplearn.entity;
+
+public class Constants {
+
+	public static final String BREAKE_STR="-";
+	
+	public static final String STUDY_PLATFORM_URL="url";
+	
+	public static final String STUDY_PALTFORM_CREATESPACE_URL="create.spaceurl";
+	
+
+	//Header
+	public static final String STUDY_PLATFORM_X_ACCOUNT="x_account";
+	
+	public static final String STUDY_PLATFORM_X_SECRET="x_secret";
+	
+	public static final String STUDY_PLATFORM_COURSEID="courseid";
+	
+	public static final String STUDY_PLATFORM_TITLE="title";
+	
+	
+	//Prefix
+	public static final String STUDY_PLATFORM_DISCIPLINESPACE_PREFIX="kc";
+	
+}

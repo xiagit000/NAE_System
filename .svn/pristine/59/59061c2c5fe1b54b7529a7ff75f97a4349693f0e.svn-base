@@ -1,0 +1,678 @@
+package com.boventech.gplearn.controller;
+
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.boventech.gplearn.entity.Announcement;
+import com.boventech.gplearn.entity.BigSubject;
+import com.boventech.gplearn.entity.ClassCourseInfomation;
+import com.boventech.gplearn.entity.Constants;
+import com.boventech.gplearn.entity.Discipline;
+import com.boventech.gplearn.entity.Grade;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.LearnCourse;
+import com.boventech.gplearn.entity.LearnStatistics;
+import com.boventech.gplearn.entity.LearnSubProject;
+import com.boventech.gplearn.entity.LearnThesis;
+import com.boventech.gplearn.entity.LearnThesisSubmit;
+import com.boventech.gplearn.entity.Question;
+import com.boventech.gplearn.entity.SchoolSpace;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.WorkStatistics;
+import com.boventech.gplearn.entity.LearnThesisSubmit.LearnThesisRating;
+import com.boventech.gplearn.entity.User.UserType;
+import com.boventech.gplearn.entity.WorkStatistics.WorkType;
+import com.boventech.gplearn.exception.LocalDatabaseUserNotFoundException;
+import com.boventech.gplearn.service.AnnouncementService;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.BigSubjectService;
+import com.boventech.gplearn.service.GradeService;
+import com.boventech.gplearn.service.LearnClassService;
+import com.boventech.gplearn.service.LearnPlanService;
+import com.boventech.gplearn.service.LearnSubProjectService;
+import com.boventech.gplearn.service.LearnThesisSubmitInfomationService;
+import com.boventech.gplearn.service.QuestionService;
+import com.boventech.gplearn.service.ReceiverNotificationService;
+import com.boventech.gplearn.service.SchoolRollService;
+import com.boventech.gplearn.service.SchoolSpaceService;
+import com.boventech.gplearn.service.UserService;
+import com.boventech.gplearn.util.LoadProperties;
+import com.google.common.collect.Lists;
+
+@Controller
+public class CommonController extends ApplicationController{
+	
+	private static final Logger logger = LoggerFactory.getLogger(CommonController.class);
+	
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private SchoolRollService schoolRollService;
+	
+	@Autowired
+	private AnnouncementService announcementService;
+	
+	@Autowired
+	private SchoolSpaceService schoolSpaceService;
+	
+	@Autowired
+	private GradeService gradeService;
+	
+	@Autowired
+	private ReceiverNotificationService receiverNotificationService;
+	
+	@Autowired
+	private LearnClassService learnClassService;
+	
+	@Autowired
+	private BigSubjectService bigSubjectService;
+	
+	@Autowired
+	private LearnPlanService learnPlanService;
+	
+	@Autowired
+	private LearnThesisSubmitInfomationService learnThesisSubmitInfomationService;
+	
+	@Autowired
+	private QuestionService questionService;
+	
+	@Autowired
+	private BatchService batchService;
+	
+	@Autowired
+	private LearnSubProjectService learnSubProjectService;
+	
+	@RequestMapping(value="/")
+	public String hello(HttpServletRequest request,Model model){
+		Object user=request.getSession().getAttribute("currentUser");
+		if(null == user){
+			return "common/login";
+		}
+		//根据不同权限跳向不同页面
+		User currentUser = (User)user;
+		UserType currentRole = currentUser.getUserType();
+		return getReturnPage(currentRole,model,request);
+	}
+
+	@RequestMapping(value="/login")
+	public String login(HttpServletRequest request,Model model){
+		Object user=request.getSession().getAttribute("currentUser");
+		String loginName = request.getRemoteUser();
+		User currentUser=null;
+		try {
+			currentUser = findcurrentUser(loginName);
+		} catch (LocalDatabaseUserNotFoundException e) {
+			logger.error(e.getMessage());
+			return "redirect:/";
+		}
+		if(user==null && currentUser!=null){
+			if(!currentUser.isActive()){
+				currentUser.setActive(true);
+				userService.update(currentUser);
+			}
+			request.getSession().setAttribute("currentUser", currentUser);
+		}
+		//根据不同权限跳向不同页面
+		UserType currentRole = currentUser.getUserType();
+		return getReturnPage(currentRole,model,request);
+	}
+	
+	@RequestMapping(value="/error/404")
+	public String error404(){
+		return "error/404";
+	}
+	
+	@RequestMapping(value="/logout")
+	public void logout(HttpServletRequest request,HttpServletResponse response){
+//		CASPlatformHttpClient client = new CASPlatformHttpClient();
+//		client.logout();
+		HttpSession session = request.getSession();
+		session.removeAttribute("siteMenu");
+		session.removeAttribute("siteItem");
+		session.removeAttribute("currentUser");
+		session.removeAttribute("myClass");
+		session.removeAttribute("myXBYXPath");
+		session.removeAttribute("mySchoolPath");
+		session.removeAttribute("unreadCount");
+		try {
+			String logoutURL=LoadProperties.getProperty(Constants.CAS_BASE_URL_KEY)+
+							LoadProperties.getProperty(Constants.CAS_LOGOUT_URL_KEY);
+			response.sendRedirect(logoutURL);
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		}
+	}
+	
+	private String getReturnPage(UserType currentRole,Model model,HttpServletRequest request) {
+		String returnPage="common/login";
+		if(currentRole.equals(UserType.System_Administrator)){
+			initAdministrator(request,model);
+			returnPage="common/admin";
+		}
+		if(currentRole.equals(UserType.Teacher)){
+			initTeacherFirstPageDate(model,request);
+			returnPage="common/teacher";
+		}
+		if(currentRole.equals(UserType.Project_Specialists)){
+			initProjectFirstPageDate(model,request);
+			returnPage="common/project";
+		}
+		if(currentRole.equals(UserType.Province_Supervisor)){
+			returnPage="common/province";
+		}
+		if(currentRole.equals(UserType.School_Supervisor)){
+			returnPage="common/school";
+		}
+		if(currentRole.equals(UserType.Student)){
+			initStudentFirstPageDate(model,request);
+			returnPage="common/student";
+		}
+		if(currentRole.equals(UserType.Subject_Specialists)){
+			returnPage="common/discipline";
+		}
+		return returnPage;
+	}
+	
+	private void initAdministrator(HttpServletRequest request, Model model) {
+		HttpSession session = request.getSession();
+		User currentUser = (User)session.getAttribute("currentUser");
+		messageBoxInit(request.getSession(), currentUser);
+	}
+
+	private void initProjectFirstPageDate(Model model,
+			HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		User currentUser = (User)session.getAttribute("currentUser");
+		
+		List<String> provinceIdList  = Lists.newArrayList();
+		List<String> citiesIdList = Lists.newArrayList();
+		List<User> users =Lists.newArrayList();
+		List<String> schoolList = Lists.newArrayList();
+		List<LearnThesisSubmit> learnThesisSubmitList=Lists.newArrayList();
+		List<Question> questionList =Lists.newArrayList();
+		DecimalFormat format=new DecimalFormat("0.00");
+		
+		//初始化培训项目统计列表
+		LearnStatistics projectStatistic = new LearnStatistics();
+		LearnSubProject learnSubProject = learnSubProjectService.findByPersonIncharge(currentUser);
+		projectStatistic.setLearnSubProject(learnSubProject);
+		List<LearnClass> learnClasses=learnClassService.listByLearnSubProjectInCurrentBatch(learnSubProject,batchService.getCurrentBatch());
+		projectStatistic.setLearnClassCount(learnClasses.size());
+		
+		String provinceId="";
+		String cityId="";
+		Integer markingWorkCount=0;
+		Integer goodmarkingWorkCount=0;
+		Integer questionResolved=0;
+		Integer questionUnResolved=0;
+		for(LearnClass learnClass : learnClasses){
+			String elcode=learnClass.getLearnArea().getElCode();
+			provinceId = elcode.substring(0,elcode.indexOf(Constants.BREAKE_STR));
+			cityId =  elcode.substring(elcode.indexOf(Constants.BREAKE_STR)+1,elcode.length());
+			if(!provinceIdList.contains(provinceId)){
+				provinceIdList.add(provinceId);
+			}
+			if(!citiesIdList.contains(cityId)){
+				citiesIdList.add(cityId);
+			}
+			List<User> learnClassUsers=schoolRollService.findUsersByClass(learnClass);
+			for(int i =0;i<learnClassUsers.size();i++){
+				users.add(learnClassUsers.get(i));
+				if(!schoolList.contains(learnClassUsers.get(i).getAccount().getSchool())){
+					schoolList.add(learnClassUsers.get(i).getAccount().getSchool());
+				}
+				List<LearnThesisSubmit> ltss=learnThesisSubmitInfomationService.
+										listActiveInfoByStudentUser(learnClassUsers.get(i));
+				for(LearnThesisSubmit lts : ltss){
+					learnThesisSubmitList.add(lts);
+					if(null!=lts.getMakingDate()){
+						markingWorkCount++;
+					}
+					if(lts.getLearnThesisRating().equals(LearnThesisRating.VERYGOOD)){
+						goodmarkingWorkCount++;
+					}
+				}
+				List<Question> questions = questionService.listByAsker(learnClassUsers.get(i));
+				for(Question q : questions){
+					questionList.add(q);
+					if(q.isResolved()){
+						questionResolved++;
+						continue;
+					}
+					questionUnResolved++;
+				}
+			}
+		}
+		projectStatistic.setLearnThesisInfo(learnThesisSubmitList.size()+"/"+markingWorkCount+"/"+goodmarkingWorkCount);
+		projectStatistic.setQuestionInfo(questionList.size()+"/"+questionResolved+"/"+questionUnResolved);
+		projectStatistic.setCitiesCount(citiesIdList.size());
+		projectStatistic.setProvinceCount(provinceIdList.size());
+		projectStatistic.setSchoolCount(schoolList.size());
+		Integer activeStudentCount =0;
+		for(User user : users){
+			if(user.isActive()){
+				activeStudentCount++;
+			}
+		}
+		projectStatistic.setClassMateInfo(activeStudentCount+"/"+users.size());
+		//人均在线时长
+		//人均有效时长
+		Random random = new Random(new Date().getTime());
+		Integer onlineTime = random.nextInt(50);
+		projectStatistic.setOnlineTimeCount(Double.valueOf(format.format(onlineTime+random.nextDouble())));
+		random=new Random(new Date().getTime());
+		if(onlineTime<=1){
+			onlineTime=2;
+		}
+		projectStatistic.setEnableTimeCount(Double.valueOf(format.format(random.nextInt(onlineTime-1)+random.nextDouble())));
+		//班级论坛发帖回帖
+		//mock Forum TopicTotal
+		random = new Random(new Date().getTime());
+		Integer forumTotal = random.nextInt(3000);
+		//mock Forum ReplayTotal
+		Integer forumReplies=random.nextInt(10000);
+		//mock Forum goodTopicTotal
+		Integer forumGoodTopic = random.nextInt(forumTotal);
+		projectStatistic.setForumTopicInfo(forumTotal+"/"+forumReplies+"/"+forumGoodTopic);
+		
+	
+		/**
+		 * 当前下班级的统计列表
+		 */
+		List<LearnStatistics> learnClassStatistics=Lists.newArrayList();
+		
+		for(int i =0;i<learnClasses.size();i++){
+			LearnStatistics ls = new LearnStatistics();
+			//人员
+			LearnClass temp = learnClasses.get(i);
+			List<User> usersInClass=schoolRollService.listActiveByLearnClass(temp);
+			Integer totalClassMateCount = schoolRollService.findUsersByClass(temp).size();
+			Integer activeClassMateCount =usersInClass.size();
+			ls.setClassMateInfo(totalClassMateCount+"/"+activeClassMateCount);
+			//mock Forum TopicTotal
+			random = new Random(new Date().getTime());
+			forumTotal = random.nextInt(500);
+			//mock Forum ReplayTotal
+			forumReplies=random.nextInt(1000);
+			//mock Forum goodTopicTotal
+			forumGoodTopic = random.nextInt(forumTotal);
+			
+			ls.setForumTopicInfo(forumTotal+"/"+forumReplies+"/"+forumGoodTopic);
+			
+			//learnThesis Info
+			//1.获取所有提交数量
+			Integer learnThesisMarkingGoodCount=0;
+			Integer learnThesisMarkingCount = 0;
+			Integer learnThesisTotalCount = 0;
+			for(User classMate : usersInClass){
+				List<LearnThesisSubmit> learnThesisSubmits=learnThesisSubmitInfomationService.listActiveInfoByStudentUser(classMate);
+				for(LearnThesisSubmit learnThesisSubmit : learnThesisSubmits){
+					learnThesisTotalCount++;
+					if(null!=learnThesisSubmit.getMakingDate()){
+						learnThesisMarkingCount++;
+					}
+					if(null!=learnThesisSubmit.getLearnThesisRating() && 
+								learnThesisSubmit.getLearnThesisRating().equals(LearnThesisRating.VERYGOOD))	
+						learnThesisMarkingGoodCount++;
+				}
+			}
+			ls.setLearnThesisInfo(learnThesisTotalCount+"/"+learnThesisMarkingCount+"/"+learnThesisMarkingGoodCount);
+			
+			//Question Mock
+			//获取当前班级的所有question
+			List<Question> questions = questionService.listByLearnClass(temp);
+			Integer questionsInClassTotalCount=questions.size();
+			Integer questionResolveCount = 0;
+			Integer questionUnResolveCount = 0;
+			
+			for(Question question : questions){
+				if(question.isResolved()){
+					questionResolveCount++;
+					continue;
+				}
+				questionUnResolveCount++;
+			}
+			random = new Random(new Date().getTime());
+			onlineTime = random.nextInt(50);
+			ls.setOnlineTimeCount(Double.valueOf(format.format(onlineTime+random.nextDouble())));
+			random=new Random(new Date().getTime());
+			if(onlineTime<=1){
+				onlineTime=2;
+			}
+			ls.setEnableTimeCount(Double.valueOf(format.format(random.nextInt(onlineTime-1)+random.nextDouble())));
+			
+			ls.setQuestionInfo(questionsInClassTotalCount+"/"+questionResolveCount+"/"+questionUnResolveCount);
+			ls.setLearnClass(temp);
+			learnClassStatistics.add(ls);
+		}
+		messageBoxInit(session, currentUser);
+		model.addAttribute("learnClassStatistics",learnClassStatistics);
+		model.addAttribute("projectStatistic", projectStatistic);
+	}
+
+	private void initTeacherFirstPageDate(Model model,HttpServletRequest request){
+		HttpSession session = request.getSession();
+		User currentUser = (User)session.getAttribute("currentUser");
+		/**
+		 * TODO 公告初始化
+		 */
+		List<Announcement> classAs=Lists.newArrayList();
+		List<Announcement> projectAs=Lists.newArrayList();
+		List<Announcement> sysAs = Lists.newArrayList();
+		List<Announcement> provinceAs = Lists.newArrayList();
+		List<Announcement> schoolAs=Lists.newArrayList();
+		List<Announcement> disciplineAs=Lists.newArrayList();
+		List<ClassCourseInfomation> classCourseInfomationList=Lists.newArrayList();
+		
+		LearnClass learnClass = learnClassService.findByTeacher(currentUser);
+		//公告：班级公告
+		//1.找到我发的班级公告
+		classAs = announcementService.listAllNewestFirstFive(currentUser);
+		//公告：优秀研修论文
+		
+		//公告：项目公告
+		projectAs=projectGGInit(learnClass,projectAs);
+		//公告 :省督导公告
+		provinceAs=provinceGGInit(learnClass,provinceAs);
+		//公告：校督导公告
+		schoolAs=schoolGGInit(currentUser,schoolAs);
+		//公告：学科公告
+		disciplineAs=disciplineGGInit(learnClass,disciplineAs);
+		//培训公告
+		sysAs=sysGGInit(sysAs);
+		//获取当前课程和在修人数
+		//1.获取当前课程列表
+		LearnSubProject  learnSubProject = learnClass.getLearnProject();
+		List<LearnCourse> learnCourseList = learnPlanService.listLearnCourseBylearnSubProject(learnSubProject);
+		//2.获取当前班级激活人数
+		Integer activeUserCount=schoolRollService.listActiveByLearnClass(learnClass).size();
+		for(LearnCourse learnCourse:learnCourseList){
+			ClassCourseInfomation cci = new ClassCourseInfomation();
+			cci.setLearnCourse(learnCourse);
+			cci.setUserdCount(activeUserCount);
+			classCourseInfomationList.add(cci);
+		}
+		//获取当前问题的统计
+		WorkStatistics questionWs = questionTotalInit(learnClass);
+		
+		//获取作业的统计
+		WorkStatistics learnThesisWs = learnThesisTotalInit(currentUser);
+		
+		//1.我的班级 
+ 		classPathInit(session, learnClass);
+ 		//2.我的校本研修空间
+ 		xbyxPathInit(session, learnClass);
+ 		//我的学校空间
+ 		schoolPathInit(session, currentUser);
+ 		
+ 		messageBoxInit(session, currentUser);
+ 		
+ 	
+		model.addAttribute("learnThesisWs",learnThesisWs);
+		model.addAttribute("questionWs", questionWs); 
+		model.addAttribute("classCourseInfomationList", classCourseInfomationList);
+		model.addAttribute("classAs", classAs);
+		model.addAttribute("projectAs", projectAs);
+		model.addAttribute("sysAs", sysAs);
+		model.addAttribute("provinceAs", provinceAs);
+		model.addAttribute("schoolAs", schoolAs);
+		model.addAttribute("disciplineAs", disciplineAs);
+		model.addAttribute("learnClass", learnClass);
+	}
+
+	private void initStudentFirstPageDate(Model model,HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		User currentUser = (User)session.getAttribute("currentUser");
+		
+		/**
+		 * TODO 公告初始化
+		 */
+		List<Announcement> classAs=Lists.newArrayList();
+		List<LearnThesis> learnThesisList=Lists.newArrayList();
+		List<Announcement> projectAs=Lists.newArrayList();
+		List<Announcement> sysAs = Lists.newArrayList();
+		List<Announcement> provinceAs = Lists.newArrayList();
+		List<Announcement> schoolAs=Lists.newArrayList();
+		List<Announcement> disciplineAs=Lists.newArrayList();
+		List<BigSubject> bigSubjectAs=Lists.newArrayList();
+		List<Grade> gradesList = Lists.newArrayList();
+		
+		//公告：班级公告
+		//1.找到我所在的班级
+		LearnClass learnClass = schoolRollService.findByUserNewest(currentUser).getLearnClass();
+		LearnSubProject learnSubProject = learnClass.getLearnProject();
+		//2.找到班级老师
+		User teacher = learnClass.getTeacher();
+		//找到班级老师所发布的最新5条公告
+		if(!checkEntityEmpty(teacher)){
+			classAs=announcementService.listAllNewestFirstFive(teacher);
+		}
+		//公告：优秀研修论文
+		//项目公告
+		projectAs=projectGGInit(learnClass,projectAs);
+		//省督导公告
+		provinceAs=provinceGGInit(learnClass,provinceAs);
+		//校督导公告
+		schoolAs=schoolGGInit(currentUser,schoolAs);
+		//学科专家公告
+		disciplineAs=disciplineGGInit(learnClass,disciplineAs);
+		//公告：培训公告
+		sysAs=sysGGInit(sysAs);
+		
+		//当前班级所有学员成绩
+		gradesList=classMateInit(learnClass,gradesList);
+		
+		//mock统计
+		for(int i =0;i<gradesList.size();i++){
+			mockDate(gradesList, i);
+		}
+		//校本研修内容
+		//1.找到学生所在学科的校本研修大主题
+		Discipline discipline = learnSubProject.getDiscipline();
+		bigSubjectAs =  bigSubjectService.listWithDisciplineInCurrentBatch(discipline);
+		
+		//获取用户站内信信息放到session
+		messageBoxInit(session, currentUser);
+		//初始化部分需要导向的路径
+		//1.我的班级 
+ 		classPathInit(session, learnClass);
+ 		//2.我的校本研修空间
+ 		xbyxPathInit(session, learnClass);
+ 		//我的学校空间
+ 		schoolPathInit(session, currentUser);
+ 		
+ 		model.addAttribute("classAs", classAs);
+		model.addAttribute("learnThesisList", learnThesisList);
+		model.addAttribute("projectAs", projectAs);
+		model.addAttribute("sysAs", sysAs);
+		model.addAttribute("provinceAs", provinceAs);
+		model.addAttribute("schoolAs", schoolAs);
+		model.addAttribute("disciplineAs", disciplineAs);
+		model.addAttribute("bigSubjectAs", bigSubjectAs);
+		model.addAttribute("gradesList", gradesList);
+		model.addAttribute("learnClass", learnClass);
+		
+ 		
+	}
+
+	private void schoolPathInit(HttpSession session, User currentUser) {
+		SchoolSpace schoolSpace = schoolSpaceService.findBySchoolNameAndBatch(currentUser.getAccount().getSchool(),batchService.getCurrentBatch());
+ 		String mySchoolPath=LoadProperties.getProperty(Constants.STUDY_PLATFORM_URL)+
+ 							LoadProperties.getProperty(Constants.STUDY_PLATFORM_ACCESS_PATH_KEY)+
+ 							Constants.STUDY_PLATFORM_SCHOOLSPACE_PREFIX+schoolSpace.getId();
+ 		session.setAttribute("mySchoolPath", mySchoolPath);
+	}
+
+	private void xbyxPathInit(HttpSession session, LearnClass learnClass) {
+		String myXBYXPath=LoadProperties.getProperty(Constants.STUDY_PLATFORM_URL)+
+							LoadProperties.getProperty(Constants.STUDY_PLATFORM_ACCESS_PATH_KEY)+
+							Constants.STUDY_PLATFORM_XBYX_PREFIX+
+							learnClass.getLearnProject().getDiscipline().getId();
+ 		session.setAttribute("myXBYXPath", myXBYXPath);
+	}
+
+	private void classPathInit(HttpSession session, LearnClass learnClass) {
+		String myClassPath=LoadProperties.getProperty(Constants.STUDY_PLATFORM_URL)+
+ 							LoadProperties.getProperty(Constants.STUDY_PLATFORM_ACCESS_PATH_KEY)+
+ 							Constants.STUDY_PLATFORM_DISCIPLINESPACE_PREFIX+
+ 							learnClass.getLearnProject().getDiscipline().getId();
+ 		session.setAttribute("myClass", myClassPath);
+	}
+
+	private void messageBoxInit(HttpSession session, User currentUser) {
+		Integer notificationCount = receiverNotificationService.countNoConsultNotificationByUser(currentUser);
+		session.setAttribute("unreadCount", notificationCount);
+	}
+
+	private List<Grade> classMateInit(LearnClass learnClass,List<Grade> gradesList) {
+		List<User> classMate = schoolRollService.listActiveByLearnClass(learnClass);
+		for(User user : classMate){
+			gradesList.add(gradeService.findByUser(user));
+		}
+		return gradesList;
+	}
+
+	private List<Announcement> sysGGInit(List<Announcement> sysAs) {
+		User systemUser = userService.findByUserType(UserType.System_Administrator);
+		sysAs = announcementService.listAllNewestFirstFive(systemUser);
+		return sysAs;
+	}
+
+	private void mockDate(List<Grade> gradesList, int i) {
+		Random rand;
+		Grade grade = gradesList.get(i);
+		Double mockDate =null;
+		DecimalFormat format=new DecimalFormat("0.00");
+		//mock 研修讨论分数
+		rand=new Random(new Date().getTime());
+		Double score=grade.getScoringStandard().getLearnDiscussProportion()*100;
+		Integer mock=rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate=mock+rand.nextDouble();
+		grade.setLearnDiscussScore(Double.valueOf(format.format(mockDate)));
+		//mock 视频分数
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getLearnVideoProportion()*100;
+		mock = rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate = mock+rand.nextDouble();
+		grade.setLearnVideoScore(Double.valueOf(format.format(mockDate)));
+		//mock 研修论文
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getLearnThesisProportion()*100;
+		mock=rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate = mock+rand.nextDouble();
+		grade.setLearnThesisScore(Double.valueOf(format.format(mockDate)));
+		//mock 平时成绩
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getUsuallyProportion()*100;
+		mock=rand.nextInt(score.intValue())-1;
+		mock=mock-1>=0?mock:0;
+		mockDate=mock+rand.nextDouble();
+		grade.setUsuallyScore(Double.valueOf(format.format(mockDate)));
+		gradesList.set(i, grade);
+		gradeService.update(grade);
+	}
+
+	private User findcurrentUser(String loginName) throws LocalDatabaseUserNotFoundException{
+		User currentUser = null;
+		currentUser = userService.findByLoginName(loginName);
+		if(null == currentUser){
+			throw new LocalDatabaseUserNotFoundException();
+		}
+		return currentUser;
+	}
+	
+
+	private List<Announcement> disciplineGGInit(LearnClass learnClass,List<Announcement> disciplineAs) {
+		User disciplineUser=learnClass.getLearnProject().getPersonInCharge();
+		if(!checkEntityEmpty(disciplineUser)){
+			disciplineAs = announcementService.listAllNewestFirstFive(disciplineUser);
+		}
+		return disciplineAs;
+	}
+
+	private List<Announcement> schoolGGInit(User currentUser,List<Announcement> schoolAs) {
+		SchoolSpace schoolSpace  = schoolSpaceService.findBySchoolNameAndBatch(currentUser.getAccount().getSchool(),batchService.getCurrentBatch());
+		User schoolUser =schoolSpace.getUser();
+		if(!checkEntityEmpty(schoolUser)){
+			schoolAs = announcementService.listAllNewestFirstFive(schoolUser);
+		}
+		return schoolAs;
+	}
+
+	private List<Announcement> provinceGGInit(LearnClass learnClass,List<Announcement> projectAs) {
+		User provinceUser=learnClass.getLearnArea().getUser();
+		if(!checkEntityEmpty(provinceUser)){
+			projectAs = announcementService.listAllNewestFirstFive(provinceUser);
+		}
+		return projectAs;
+	}
+
+	private List<Announcement> projectGGInit(LearnClass learnClass,List<Announcement> projectAs) {
+		LearnSubProject learnSubProject= learnClass.getLearnProject();
+		User projectUser = learnSubProject.getPersonInCharge();
+		if(!checkEntityEmpty(projectUser)){
+			projectAs = announcementService.listAllNewestFirstFive(projectUser);
+		}
+		return projectAs;
+	}
+	
+
+	private WorkStatistics questionTotalInit(LearnClass learnClass) {
+		WorkStatistics questionWs = new WorkStatistics();
+		List<User> classMate = schoolRollService.findUsersByClass(learnClass);
+		Integer waitresolveCount = 0;
+		Integer resolveCount = 0;
+		for(User user : classMate){
+			List<Question> questions=questionService.listByAsker(user);
+			for(Question question: questions){
+				if(question.isResolved()){
+					resolveCount++;
+					continue;
+				}
+				waitresolveCount++;
+			}
+		}
+		questionWs.setResolveCount(resolveCount);
+		questionWs.setWaitResolveCount(waitresolveCount);
+		questionWs.setWorkType(WorkType.Question);
+		return questionWs;
+	}
+
+	private WorkStatistics learnThesisTotalInit(User currentUser) {
+		List<LearnThesisSubmit> learnThesisSubmits = learnThesisSubmitInfomationService.listActiveInfoByTeacherUser(currentUser);
+		WorkStatistics learnThesisWs=new WorkStatistics();
+		Integer resolveCount = 0;
+		Integer waitresolveCoutn = 0;
+		for(LearnThesisSubmit lst : learnThesisSubmits){
+			if(null==lst.getMakingDate()){
+				waitresolveCoutn++;
+				continue;
+			}
+			resolveCount++;
+		}
+		learnThesisWs.setResolveCount(resolveCount);
+		learnThesisWs.setWaitResolveCount(waitresolveCoutn);
+		learnThesisWs.setWorkType(WorkType.LearnThesis);
+		return learnThesisWs;
+	}
+
+	
+}

@@ -1,0 +1,110 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.Grade;
+import com.boventech.gplearn.entity.Graduate;
+import com.boventech.gplearn.entity.SchoolRoll;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.AccountService;
+import com.boventech.gplearn.service.GradeService;
+import com.boventech.gplearn.service.GraduateService;
+import com.boventech.gplearn.service.SchoolRollService;
+import com.boventech.gplearn.service.UserService;
+import com.boventech.gplearn.util.UserFiller;
+
+@Controller
+@RequestMapping(value = "/user")
+public class UserController extends ApplicationController {
+    
+    private Logger logger = Logger.getLogger(this.getClass().getName());
+
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private SchoolRollService schoolRollService;
+    
+    @Autowired
+    private AccountService accountService;
+    
+    @Autowired
+    private GradeService gradeService;
+    
+    @Autowired
+    private GraduateService graduateService;
+
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(Model model,Integer page) {
+        model.addAttribute("users", this.userService.listAllWithPagnate(page));
+        return "user/index";
+    }
+    
+    @Transactional
+    @RequestMapping(value="{id}",method = RequestMethod.DELETE)
+    public String destory(Model model,@PathVariable String id,final RedirectAttributes redirectAttrs) {
+        User user=this.userService.findById(Long.parseLong(id));
+        List<SchoolRoll> schoolRolls=this.schoolRollService.findByUser(user);
+        Grade grade=this.gradeService.findByUser(user);
+        Graduate graduate=this.graduateService.findByGrade(grade);
+        try {
+            this.graduateService.delete(graduate);
+            this.gradeService.delete(grade);
+            this.schoolRollService.delete(schoolRolls);
+            this.accountService.delete(user.getAccount());
+            this.userService.delete(Long.parseLong(id));
+            sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            logger.info(e.getMessage());
+            sendErrorMessageWhenRedirect(redirectAttrs, "common.hasnode.warn");
+            return "redirect:/user";
+        }
+        return "redirect:/user";
+    }
+
+    @RequestMapping(value = "/exportExcel", method = RequestMethod.GET)
+    public void exportExcel(Model model, HttpServletResponse response) {
+        this.userService.exportExcel(response, getHeads(), getMessage("userExcelName"),
+                getMessage("user_loginPassword_description"),
+                new UserFiller(this.userService.listAllWithoutPagnate()));
+    }
+
+    private List<String> getHeads() {
+        List<String> heads = new ArrayList<String>();
+        heads.add(getMessage("user_id"));
+        heads.add(getMessage("user_loginName"));
+        heads.add(getMessage("user_name"));
+        heads.add(getMessage("user_idType"));
+        heads.add(getMessage("user_idNumber"));
+        heads.add(getMessage("user_batch"));
+        return heads;
+    }
+
+}

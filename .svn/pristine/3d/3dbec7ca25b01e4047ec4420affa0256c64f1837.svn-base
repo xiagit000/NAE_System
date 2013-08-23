@@ -1,0 +1,71 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
+
+import com.boventech.gplearn.entity.Account;
+
+import com.boventech.gplearn.entity.Batch;
+
+import com.boventech.gplearn.entity.Discipline;
+
+import com.boventech.gplearn.entity.EnrollmentPlan;
+
+import com.boventech.gplearn.entity.LearnClass;
+
+import com.boventech.gplearn.entity.SchoolRoll;
+
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.exception.UserDestroyInCASFaildException;
+import com.boventech.gplearn.exception.UserDestroyInStudySpaceFaildException;
+import com.boventech.gplearn.exception.UserInfoPushToStudySpaceClassRoomFaildException;
+import com.boventech.gplearn.exception.UserInfoPushToStudySpaceFaildException;
+import com.boventech.gplearn.exception.UserInfoSendCASFaildException;
+import com.boventech.gplearn.util.ObjectFiller;
+
+public interface UserService extends BaseService<User, Long> {
+    Long getMaxIndex();
+
+    void save(List<User> users);
+
+    List<User> generateUsers(List<Account> accounts, EnrollmentPlan enrollmentPlan);
+
+    List<User> listAllWithPagnate(Integer page);
+    
+    List<User> listAllWithoutPagnate();
+
+    void exportExcel(HttpServletResponse response, List<String> heads, String fileName, String description,
+            ObjectFiller filler);
+
+	boolean checkEntityExsitByLoginName(String loginName);
+
+	User findByLoginName(String loginName);
+
+	
+	List<User> listSearchWithPagnate(Integer page,User user,Account account,Batch batch,LearnClass learnClass);
+	
+	List<User> listSearchWithoutPagnate(User user,Account account,Batch batch,LearnClass learnClass);
+
+
+	void saveAllAccountInformation(List<Account> accounts,
+			EnrollmentPlan enrollmentPlan)throws UserInfoSendCASFaildException , UserInfoPushToStudySpaceFaildException, UserInfoPushToStudySpaceClassRoomFaildException ;
+
+	void pushUserToTheStudySpace(User user,Discipline discipline)throws UserInfoSendCASFaildException, UserInfoPushToStudySpaceFaildException ;
+
+	void destroyUser(User user, List<SchoolRoll> schoolRolls)throws UserDestroyInStudySpaceFaildException, UserDestroyInCASFaildException ;
+
+}

@@ -1,0 +1,145 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.entity.ScoringStandard;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.ScoringStandardService;
+
+@Controller
+@RequestMapping("scoringStandard")
+public class ScoringStandardController extends ApplicationController {
+    
+    private Logger logger = Logger.getLogger(this.getClass().getName());
+
+    @Autowired
+    private ScoringStandardService scoringStandardService;
+
+    @Autowired
+    private BatchService batchService;
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_SCHRING_STANDARD})
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model,HttpServletRequest request) {
+    	setSiteBarActive("jc", "scoringStandard", request);
+        model.addAttribute("scoringStandards", this.scoringStandardService.listAllWithoutPagnate());
+        return "scoringStandard/index";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_SCHRING_STANDARD})
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public String update(Model model, @PathVariable String id, ScoringStandard scoringStandard,
+            final RedirectAttributes redirectAttrs,String batchId) {
+        Batch batch = this.batchService.findById(Long.parseLong(batchId));
+        scoringStandard.setBatch(batch);
+        if(!checkProporion(scoringStandard)){
+        	sendErrorMessage(model, "common.percent.error");
+        	model.addAttribute("scoringStandard", scoringStandard);
+            return "scoringStandard/edit";
+        }
+        this.scoringStandardService.update(scoringStandard);
+        sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+        return "redirect:/scoringStandard";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_SCHRING_STANDARD})
+    @RequestMapping(method = RequestMethod.POST)
+    public String create(Model model, ScoringStandard scoringStandard, String batchId,
+            final RedirectAttributes redirectAttrs) {
+        Batch batch = this.batchService.findById(Long.parseLong(batchId));
+        if(!checkProporion(scoringStandard)){
+        	sendErrorMessage(model, "common.percent.error");
+        	model.addAttribute("scoringStandard", scoringStandard);
+            model.addAttribute("batchs", this.batchService.listAll());
+            return "scoringStandard/add";
+        }
+        if (this.scoringStandardService.checkExistByBatch(batch)) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", batch.getCode() + "-" + batch.getName());
+            model.addAttribute("scoringStandard", scoringStandard);
+            model.addAttribute("batchs", this.batchService.listAll());
+            return "scoringStandard/add";
+        }
+        scoringStandard.setBatch(batch);
+        this.scoringStandardService.save(scoringStandard);
+        sendNoticeWhenRedirect(redirectAttrs, "common.add.success");
+        return "redirect:/scoringStandard";
+    }
+
+    
+	private boolean checkProporion(ScoringStandard scoringStandard) {
+		scoringStandard.setLearnDiscussProportion(scoringStandard.getLearnDiscussProportion()/100);
+        scoringStandard.setLearnThesisProportion(scoringStandard.getLearnThesisProportion()/100);
+        scoringStandard.setLearnVideoProportion(scoringStandard.getLearnVideoProportion()/100);
+        scoringStandard.setUsuallyProportion(scoringStandard.getUsuallyProportion()/100);
+		double totalProportion=scoringStandard.getLearnDiscussProportion()+scoringStandard.getLearnThesisProportion()
+        		+scoringStandard.getLearnVideoProportion()+scoringStandard.getUsuallyProportion();
+		if(totalProportion==1){
+			return true;
+		}
+		return false;
+	}
+
+	@RequiredPrivilege(value={Privilege.SYSTEM_SCHRING_STANDARD})
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public String destroy(ModelMap model, @PathVariable String id,final RedirectAttributes redirectAttrs) {
+        try {
+            this.scoringStandardService.delete(Long.parseLong(id));
+            sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+        } catch (JpaSystemException e) {
+            logger.error(e.getMessage());
+            sendErrorMessageWhenRedirect(redirectAttrs, "common.hasnode.warn");
+            return "redirect:/scoringStandard";
+        }
+        return "redirect:/scoringStandard";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_SCHRING_STANDARD})
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public String show(ModelMap model, @PathVariable String id) {
+        ScoringStandard scoringStandard = this.scoringStandardService.findById(Long.parseLong(id));
+        model.addAttribute("scoringStandard", scoringStandard);
+        return "scoringStandard/show";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_SCHRING_STANDARD})
+    @RequestMapping(value = "/{id}/edit", method = RequestMethod.GET)
+    public String edit(ModelMap model, @PathVariable String id) {
+        ScoringStandard scoringStandard = this.scoringStandardService.findById(Long.parseLong(id));
+        model.addAttribute("scoringStandard", scoringStandard);
+        return "scoringStandard/edit";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_SCHRING_STANDARD})
+    @RequestMapping(value = "/new", method = RequestMethod.GET)
+    public String editNew(ModelMap model) {
+        model.addAttribute("batchs", this.batchService.listAll());
+        return "scoringStandard/add";
+    }
+}

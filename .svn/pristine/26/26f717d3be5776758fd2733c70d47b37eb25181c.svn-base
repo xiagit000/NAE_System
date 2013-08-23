@@ -1,0 +1,128 @@
+package com.boventech.gplearn.entity;
+
+public class Constants {
+
+	public static final String BREAKE_STR="-";
+	
+	public static final String POINT=".";
+	
+	//CAS RESTFUL URL
+	public static final String CAS_BASE_URL_KEY="cas.url";
+	
+	public static final String CAS_USER_ADD_URL_KEY="cas.add.user";
+	
+	public static final String CAS_USER_SELECTED_URL_KEY="cas.select.user";
+	
+	public static final String CAS_USER_UPDATE_URL_KEY="cas.update.user";
+	
+	public static final String CAS_USER_DESTROY_URL_KEY="cas.destroy.user";
+	
+	public static final String CAS_LOGOUT_URL_KEY = "cas.logout";
+	
+	//CAS HEADER
+	
+	public static final String CAS_HEADER_DOMAINID_KEY="cas.x_domainid";
+	
+	public static final String CAS_HEADER_ACCOUNT_KEY="cas.x_account";
+	
+	public static final String CAS_HEADER_SECRET_KEY="cas.xsecret";
+	
+	public static final String CAS_DOMAINID="x_domainid";
+	
+	public static final String CAS_ACCOUNT="x_account";
+	
+	public static final String CAS_SECRET="x_secret";
+	
+	public static final String CAS_HEADER_USERNAME="u_username";
+	
+	public static final String CAS_HEADER_PASSWORD="u_password";
+	
+	public static final String CAS_HEADER_REALNAME="u_realname";
+	
+	public static final String CAS_HEADER_ROLEID="u_roleid";
+	
+	public static final String CAS_HEADER_CUSTOMROLE="u_customrole";
+	
+	//CAS DEFAULT ROLEID
+	public static final Integer CAS_SYSTEM_ADMIN=99;
+	
+	public static final Integer CAS_TEACHER=2;
+	
+	public static final Integer CAS_STUDENT=1;
+	
+	public static final Integer CAS_STUDYSPACE_ADMIN=5;
+	
+	public static final Integer CAS_OTHER=98;
+	
+	//STUDYSPACE RESTFUL URL
+	public static final String STUDY_PLATFORM_ACCESS_PATH_KEY="access.path";
+	
+	public static final String STUDY_PLATFORM_URL="url";
+	
+	public static final String STUDY_PLATFORM_CREATESPACE_URL_KEY="create.spaceurl";
+	
+	public static final String STUDY_PLATFORM_CREATECLASSROOM_URL_KEY="create.space.classroom";
+	
+	public static final String STUDY_PLATFORM_UPDATECLASSROOM_URL_KEY="update.space.classroom";
+	
+	public static final String STUDY_PLATFORM_DELETECLASSROOM_URL_KEY="delete.space.classroom";
+	
+	public static final String STUDY_PLATFORM_ADDUSERTOSPACE_URL_KEY="space.add.user";
+	
+	public static final String STUDY_PLATFORM_REMOVEUSERFROMSPACE_URL_KEY="space.remove.user";
+	
+	public static final String STUDY_PLATFORM_ADDUSERTOSPACECLASSROOM_URL_KEY="space.classroom.add.user";
+	
+	public static final String STUDY_PLATFORM_REMOVEUSERFROMSPACECLASSROOM_URL_KEY="space.classroom.remove.user";
+	
+
+	//StudySpace Header
+	
+	public static final String STUDY_PLATFORM_X_ACCOUNT="x_account";
+	
+	public static final String STUDY_PLATFORM_X_SECRET="x_secret";
+	
+	public static final String STUDY_PLATFORM_COURSEID="courseid";
+	
+	public static final String STUDY_PLATFORM_TITLE="title";
+	
+	public static final String STUDY_PLATFORM_GROUPID="groupid";
+	
+	public static final String STUDY_PLATFORM_USERNAME="username";
+	
+	public static final String STUDY_PLATFORM_REALNAME="realname";
+	
+	public static final String STUDY_PLATFORM_ROLE="role";
+	
+	
+	//BackHeader
+	
+	public static final String RESPONSE_BACK_HEADER_GROUPID="groupid";
+	
+	
+	//Prefix
+	
+	public static final String STUDY_PLATFORM_DISCIPLINESPACE_PREFIX="kc";
+	
+	public static final String STUDY_PLATFORM_XBYX_PREFIX="xbyx";
+	
+	public static final String STUDY_PLATFORM_SCHOOLSPACE_PREFIX = "school";
+	
+	public static final String DISCIPLINESPACE_TITLE_PREFIX_KEY="studyspace.name";
+	
+	public static final String XBYX_TITLE_PREFIX_KEY="xbyxspace.name";
+	
+	public static final String SCHOOL_TITLE_PREFIX_KEY="school.name";
+	
+	//StudySpace ROLE
+	
+	public static final String STUDY_PLATFORM_ROLE_TEACHER="teacher";
+	
+	public static final String STUDY_PLATFORM_ROLE_STUDENT="student";
+	
+	public static final String STUDY_PLATFORM_ROLE_ASSISTANT="assistant";
+
+	
+	//DEFAULT UPLOAD PATH
+	public static final String DEFAULT_UPLOAD_PATH="upload";
+}

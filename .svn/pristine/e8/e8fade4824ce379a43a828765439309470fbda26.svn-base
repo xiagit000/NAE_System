@@ -1,0 +1,11 @@
+package com.boventech.gplearn.exception;
+
+public class StudySpaceCreateFaildException extends Exception {
+
+	private static final long serialVersionUID = -1522769043723394627L;
+
+	@Override
+	public String getMessage() {
+		return "__________________________________StudySpaceCreateFaildException__________________________________";
+	}
+}

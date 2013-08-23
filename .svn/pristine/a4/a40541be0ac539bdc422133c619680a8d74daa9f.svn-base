@@ -1,0 +1,48 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.Account;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.SchoolSpace;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.exception.UserInfoPushToStudySpaceFaildException;
+import com.boventech.gplearn.exception.UserInfoSendCASFaildException;
+
+
+public interface SchoolSpaceService extends BaseService<SchoolSpace, Long>{
+
+
+	void save(List<SchoolSpace> schoolSpaces);
+    
+    List<SchoolSpace> generateSchoolSpaces(List<Account> accounts,EnrollmentPlan enrollmentPlan);
+    
+
+	List<SchoolSpace> listByUncreate();
+
+	List<SchoolSpace> listWithPaginationOfCurrentBatch(Integer page, Batch batch);
+
+	List<SchoolSpace> listWithPagination(Integer page);
+
+	void saveSchooSpaceUser(SchoolSpace schoolSpace, User user)throws UserInfoSendCASFaildException,UserInfoPushToStudySpaceFaildException;
+
+	SchoolSpace findBySchoolNameAndBatch(String schoolName,Batch batch);
+	
+	boolean checkExsitBySchoolNameAndBatch(String schoolName,Batch batch);
+
+	SchoolSpace findByPersonIncharge(User currentUser);
+}

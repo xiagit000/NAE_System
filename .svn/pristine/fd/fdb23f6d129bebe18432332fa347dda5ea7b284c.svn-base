@@ -1,0 +1,60 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.boventech.gplearn.dao.SchoolSpaceDao;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.SchoolSpace;
+
+@Repository
+public class SchoolSpaceDaoImpl extends BaseDaoImpl<SchoolSpace, Long> implements SchoolSpaceDao{
+
+    @Override
+	public boolean checkExistBySchoolNameAndBatch(String school, Batch batch) {
+		String queryString = "FROM SchoolSpace where schoolName=?1 AND batch=?2";
+		return !executeQueryWithoutPaging(queryString, school,batch).isEmpty();
+	}
+
+	@Override
+	public List<SchoolSpace> listByUncreate() {
+		String queryString = "from SchoolSpace where creted=?1";
+		return executeQueryWithoutPaging(queryString, false);
+	}
+
+	@Override
+	public List<SchoolSpace> listWithPaginationOfCurrentBatch(Integer page,
+			Batch batch) {
+		String queryString = "FROM SchoolSpace ss WHERE ss.batch=?1";
+		return executeQueryWithPagination(queryString, " ORDER BY ss.id DESC", page,batch);
+	}
+
+	@Override
+	public List<SchoolSpace> listWithPagination(Integer page) {
+		String queryString = "FROM SchoolSpace ss";
+		return executeQueryWithPagination(queryString, " ORDER BY ss.id DESC", page);
+	}
+
+	@Override
+	public SchoolSpace findBySchoolNameAndBatch(String schoolName, Batch batch) {
+		String queryString = "FROM SchoolSpace ss WHERE ss.schoolName=?1 AND ss.batch=?2";
+		List<SchoolSpace> list = executeQueryWithoutPaging(queryString, schoolName,batch);
+		return list.isEmpty()?null:list.get(0);
+	}
+
+
+}

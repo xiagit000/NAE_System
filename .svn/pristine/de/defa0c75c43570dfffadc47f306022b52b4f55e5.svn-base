@@ -1,0 +1,38 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.boventech.gplearn.dao.NotificationDao;
+import com.boventech.gplearn.entity.Notification;
+import com.boventech.gplearn.entity.User;
+
+@Repository
+public class NotificationDaoImpl extends BaseDaoImpl<Notification, Long> implements NotificationDao{
+
+    @Override
+    public List<Notification> listAll() {
+        return executeQueryWithoutPaging("from Notification");
+    }
+
+    @Override
+    public List<Notification> listReceiver(User user) {
+        String queryString = "FROM Notification no WHERE no.user.id=?1";
+        return executeQueryWithoutPaging(queryString,user.getId());
+    }
+
+}

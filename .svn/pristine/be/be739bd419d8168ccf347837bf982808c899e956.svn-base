@@ -1,0 +1,12 @@
+$(function(){
+	
+	jQuery.validator.messages.required =
+		"<span class='error' generated='true' style='color: red; font-size: 12px;'>*请填写此内容</span>";
+
+	$("#add_form").validate({
+		rules : {
+			passScore : {required : true},
+			graduateTime : {required : true,dateISO:true}
+		}
+	});
+});

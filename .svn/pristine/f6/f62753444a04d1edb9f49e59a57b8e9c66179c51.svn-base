@@ -1,0 +1,171 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.entity;
+
+import java.io.Serializable;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.persistence.Transient;
+
+/**
+ * 学生成绩
+ */
+@Entity
+@Table(name="grade")
+public class Grade implements Serializable{
+
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+    
+    private double LearnVideoScore;
+    
+    private double LearnThesisScore;
+    
+    private double LearnDiscussScore;
+    
+    private double usuallyScore;
+
+    @Transient
+    private double totalScore;
+    
+    @ManyToOne(cascade=CascadeType.REFRESH)
+    @JoinColumn(name="scoringStandard_id")
+    private ScoringStandard scoringStandard;
+    
+    @OneToOne
+    @JoinColumn(name="user_id")
+    private User user;
+
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    /**
+     * @return the learnVideoScore
+     */
+    public double getLearnVideoScore() {
+        return LearnVideoScore;
+    }
+
+    /**
+     * @param learnVideoScore the learnVideoScore to set
+     */
+    public void setLearnVideoScore(double learnVideoScore) {
+        LearnVideoScore = learnVideoScore;
+    }
+
+    /**
+     * @return the learnThesisScore
+     */
+    public double getLearnThesisScore() {
+        return LearnThesisScore;
+    }
+
+    /**
+     * @param learnThesisScore the learnThesisScore to set
+     */
+    public void setLearnThesisScore(double learnThesisScore) {
+        LearnThesisScore = learnThesisScore;
+    }
+
+    /**
+     * @return the learnDiscussScore
+     */
+    public double getLearnDiscussScore() {
+        return LearnDiscussScore;
+    }
+
+    /**
+     * @param learnDiscussScore the learnDiscussScore to set
+     */
+    public void setLearnDiscussScore(double learnDiscussScore) {
+        LearnDiscussScore = learnDiscussScore;
+    }
+
+    /**
+     * @return the usuallyScore
+     */
+    public double getUsuallyScore() {
+        return usuallyScore;
+    }
+
+    /**
+     * @param usuallyScore the usuallyScore to set
+     */
+    public void setUsuallyScore(double usuallyScore) {
+        this.usuallyScore = usuallyScore;
+    }
+
+    /**
+     * @return the user
+     */
+    public User getUser() {
+        return user;
+    }
+
+    /**
+     * @param user the user to set
+     */
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    /**
+     * @return the scoringStandard
+     */
+    public ScoringStandard getScoringStandard() {
+        return scoringStandard;
+    }
+
+    /**
+     * @param scoringStandard the scoringStandard to set
+     */
+    public void setScoringStandard(ScoringStandard scoringStandard) {
+        this.scoringStandard = scoringStandard;
+    }
+
+    /**
+     * @return the totalScore
+     */
+    public double getTotalScore() {
+        this.totalScore+=LearnDiscussScore;
+        this.totalScore+=LearnThesisScore;
+        this.totalScore+=LearnVideoScore;
+        this.totalScore+=usuallyScore;
+        return totalScore;
+    }
+
+    
+}

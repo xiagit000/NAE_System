@@ -1,0 +1,184 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.Announcement;
+import com.boventech.gplearn.entity.Attachment;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.SchoolRoll;
+import com.boventech.gplearn.entity.SchoolSpace;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.User.UserType;
+import com.boventech.gplearn.service.AnnouncementService;
+import com.boventech.gplearn.service.AttachmentService;
+import com.boventech.gplearn.service.LearnClassService;
+import com.boventech.gplearn.service.SchoolRollService;
+import com.boventech.gplearn.service.SchoolSpaceService;
+import com.boventech.gplearn.service.UserService;
+import com.boventech.gplearn.util.FileSender;
+
+@Controller
+@RequestMapping(value = "/announcement")
+public class AnnouncementController extends ApplicationController {
+
+	@Autowired
+	private AnnouncementService announcementService;
+	
+	@Autowired
+	private AttachmentService attachmentService;
+	
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private SchoolRollService schoolRollService;
+	
+	@Autowired
+	private SchoolSpaceService schoolSpaceService;
+	
+	@Autowired
+	private LearnClassService learnClassService;
+
+	@RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model,HttpServletRequest request,User user) {    
+    	if(user.getUserType()==UserType.Student){
+    		SchoolRoll schoolRoll=this.schoolRollService.findSchoolRollByUser(user);
+    		List<Announcement> classAnnouncements=this.announcementService.listAll(schoolRoll.getLearnClass().getUser());
+    		model.addAttribute("classAnnouncements", classAnnouncements);
+    		
+    		SchoolSpace schoolSpace=this.schoolSpaceService.findBySchoolName(user.getAccount().getSchool());
+    		List<Announcement> schoolAnnouncements=this.announcementService.listAll(schoolSpace.getUser());
+    		model.addAttribute("schoolAnnouncements", schoolAnnouncements);
+    		
+    		List<Announcement> provinceAnnouncements=this.announcementService.listAll(schoolRoll.getLearnClass().getLearnArea().getUser());
+    		model.addAttribute("provinceAnnouncements", provinceAnnouncements);
+    		
+    		List<Announcement> projectAnnouncements=this.announcementService.listAll(schoolRoll.getLearnClass().getLearnProject().getPersonInCharge());
+    		model.addAttribute("projectAnnouncements", projectAnnouncements);
+    		
+    		List<Announcement> subjectAnnouncements=this.announcementService.listAll(schoolRoll.getLearnClass().getLearnProject().getDiscipline().getPersonInCharge());
+            model.addAttribute("subjectAnnouncements", subjectAnnouncements);
+    	}
+    	if(user.getUserType()==UserType.Teacher){
+    		LearnClass learnClass=this.learnClassService.findByTeacher(user);
+    		List<Announcement> provinceAnnouncements=this.announcementService.listAll(learnClass.getLearnArea().getUser());
+    		model.addAttribute("provinceAnnouncements", provinceAnnouncements);
+    		
+    		List<Announcement> projectAnnouncements=this.announcementService.listAll(learnClass.getLearnProject().getPersonInCharge());
+    		model.addAttribute("projectAnnouncements", projectAnnouncements);
+    		
+    		List<Announcement> subjectAnnouncements=this.announcementService.listAll(learnClass.getLearnProject().getDiscipline().getPersonInCharge());
+            model.addAttribute("subjectAnnouncements", subjectAnnouncements);
+    	}
+        model.addAttribute("systemAnnouncements", this.announcementService.getSystemAnnouncements());
+        return "/announcement/index";
+    }
+
+	@RequestMapping(value = "/new", method = RequestMethod.GET)
+	public String editNew(ModelMap model) {
+		return "/announcement/add";
+	}
+
+	@RequestMapping(method = RequestMethod.POST)
+	public String create(Model model, Announcement announcement,HttpServletRequest request,User user,
+			@RequestParam(value = "file", required = false) MultipartFile file,final RedirectAttributes redirectAttrs) {
+		String path = request.getSession().getServletContext()
+				.getRealPath("upload");
+		String fileName = file.getOriginalFilename();
+		if (!"".equals(fileName)) {
+			File targetFile = new File(path, fileName);
+			if (!targetFile.exists()) {
+				targetFile.mkdirs();
+			}
+			try {
+				file.transferTo(targetFile);
+				Attachment attachment = new Attachment();
+				attachment.setFileName(fileName);
+				attachment.setFilePath(path);
+				attachmentService.save(attachment);
+				announcement.setAttachment(attachment);
+			} catch (IOException e) {
+				e.printStackTrace();
+				sendErrorMessageWhenRedirect(redirectAttrs,
+						"announcement.add.faild");
+				return "redirect:/announcement";
+			}
+		}
+		announcement.setUser(user);
+		announcement.setTime(new Date());
+		this.announcementService.save(announcement);
+		sendNoticeWhenRedirect(redirectAttrs, "common.add.success");
+		return "redirect:/announcement";
+	}
+
+	@RequestMapping(value = "/{id}", method = RequestMethod.GET)
+	public String show(Model model, @PathVariable String id) {
+		Announcement announcement = this.announcementService.findById(Long
+				.parseLong(id));
+		model.addAttribute("announcement", announcement);
+		return "/announcement/show";
+	}
+
+	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+	public String update(Model model, Announcement announcement,
+			@PathVariable String id) {
+		announcement.setTime(new Date());
+		this.announcementService.update(announcement);
+		return "redirect:/announcement";
+	}
+
+	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+	public String destroy(Model model, @PathVariable String id,
+			final RedirectAttributes redirectAttrs) {
+		this.announcementService.delete(Long.parseLong(id));
+		sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+		return "redirect:/announcement";
+	}
+
+	@RequestMapping(value = "/{id}/edit", method = RequestMethod.GET)
+	public String edit(Model model, @PathVariable Long id,
+			final RedirectAttributes redirectAttrs) {
+		Announcement announcement = this.announcementService.findById(id);
+		model.addAttribute("announcement", announcement);
+		return "/announcement/edit";
+	}
+
+	@RequestMapping(value = "/{id}/download", method = RequestMethod.GET)
+	public void download(Model model, @PathVariable Long id,
+			HttpServletResponse response, HttpServletRequest request) {
+		Announcement announcement = this.announcementService.findById(id);
+		String fileName = announcement.getAttachment().getFileName();
+		String path = announcement.getAttachment().getFilePath();
+		new FileSender().downLoad(request, response, path, fileName);
+	}
+}

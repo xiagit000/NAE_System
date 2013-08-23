@@ -1,0 +1,45 @@
+
+$(function(){
+		//��ർ��8���������
+	/**
+		$(".sider_menu").click(function(){
+		var n = $(this).next(".ul_list:first");
+		if(n.is(":visible")){
+			n.hide();
+		}else{
+			$(".ul_list").hide();
+			$(this).next(".ul_list").show();
+		}
+	});
+	**/
+
+
+	$(".header_list").find("a").hover(function(){
+		$(".header_list a").removeClass("list_current");
+		$(this).addClass("list_current");
+		return false;
+	});
+
+	$(".content-box-tabs").find("a").click(function(){
+		$("[data-tab]").removeClass("curr-tab");
+		$(this).addClass("curr-tab");
+		$(".tab-content").hide();
+		$($(this).attr("data-tab")).show();
+		return false;
+	});
+
+	$(".tabUl").find("li").hover(function(){
+					$(".tabCon").hide();
+					$("#" + $(this).attr("data-target")).show();
+					$(".tabUl").find("li").removeClass("tabOn");
+					$(this).addClass("tabOn");
+				},function(){
+				
+				});
+		   $("#slide").KinSlideshow({
+                intervalTime:3,   		
+                mouseEvent:"mouseover",	
+                titleFont:{TitleFont_size:14,TitleFont_color:"#fff"} 
+        });
+	
+	});

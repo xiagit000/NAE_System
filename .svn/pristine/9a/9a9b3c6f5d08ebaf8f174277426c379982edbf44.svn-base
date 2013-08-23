@@ -1,0 +1,56 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+
+<r:layout title="培训区域添加" >
+<script src="<c:url value="/resources/js/learnArea/add.js"/>" type="text/javascript"></script>
+
+         <ul class="breadcrumb">
+              <li><r:a href="/">首页</r:a> <span class="divider">/</span></li>
+              <li><r:a href="/learnArea">培训区域管理</r:a> <span class="divider">/</span></li>
+              <li class="active">培训区域添加</li>
+          </ul>
+            
+         <form action="<c:url value='/learnArea/${learnArea.id }' />" method="POST">
+         <input name="_method" type="hidden" value="put"/>
+         <input id="name" name="name" type="hidden" value="${learnArea.name }"/>
+         <input id="elCode" name="elCode" type="hidden" value="${learnArea.elCode }"/>
+         
+         <table class="table table-hover" >
+         <tbody>
+         <tr><td><b>招生区域代码：</b><input name="code" value="${learnArea.code }"/></td></tr>
+         <tr><td><b>招生区域选择：</b>
+         
+         <select id="province">
+         <c:forEach items="${provinces }" var="province" varStatus="st">
+         <option value="${province.elCode }" ${fn:substringBefore(learnArea.elCode,'-')==province.elCode?'selected':'' }>${province.name }</option>
+         </c:forEach>
+         </select>
+         
+         <c:forEach items="${provinces }" var="province" varStatus="status">
+         <select name="city">
+         <c:forEach items="${cities }" var="city" varStatus="st">
+         <c:if test="${fn:substringBefore(city.elCode,'-')==province.elCode}">
+         <option value="${city.elCode }" ${learnArea.elCode==city.elCode?'selected':'' }>${city.name }</option>
+         </c:if>
+         </c:forEach>
+         </select>
+         </c:forEach>
+         </td></tr>
+         
+         <tr><td><b>负责人姓名：</b><input name="personIncharge" value="${learnArea.personIncharge }"/></tr>
+         <tr><td><b>住址：</b><input name="address" value="${learnArea.address }"/></tr>
+         <tr><td><b>电话：</b><input name="tel" value="${learnArea.tel }"/></tr>
+         <tr><td><b>邮箱：</b><input name="email" value="${learnArea.email }"/></tr>
+         <tr><td><b>邮政编码：</b><input name="zipCode" value="${learnArea.zipCode }"/></tr>
+         <tr><td><b>是否开启：</b><input type="checkbox" name="status" ${learnArea.status==true?'checked="checked"':""}/></td></tr>
+         </tbody>
+         </table>
+
+         <input class="btn btn-primary" type="submit" value="提交"/>
+         &nbsp;&nbsp;
+         <r:a href="/learnArea" class="btn">取消</r:a>
+         </form>
+</r:layout>

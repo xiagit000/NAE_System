@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="gb2312"?>
+<LearnSpeacialtys>
+	<LearnSpeacialty name="思品"/>
+	<LearnSpeacialty name="语文"/>
+	<LearnSpeacialty name="数学"/>
+	<LearnSpeacialty name="英语"/>
+	<LearnSpeacialty name="科学"/>
+	<LearnSpeacialty name="综合实践"/>
+	<LearnSpeacialty name="体育"/>
+	<LearnSpeacialty name="音乐"/>
+	<LearnSpeacialty name="美术"/>
+	<LearnSpeacialty name="艺术"/>
+	<LearnSpeacialty name="信息技术"/>
+	<LearnSpeacialty name="物理"/>
+	<LearnSpeacialty name="化学" />
+	<LearnSpeacialty name="生物"/>
+	<LearnSpeacialty name="历史"/>
+	<LearnSpeacialty name="地理" />
+	<LearnSpeacialty name="通用技术" />
+	<LearnSpeacialty name="教育技术能力" />
+	<LearnSpeacialty name="信息技术能力" />
+	<LearnSpeacialty name="培训管理者" />
+	<LearnSpeacialty name="幼儿园教师" />
+	<LearnSpeacialty name="幼儿园园长"/>
+	<LearnSpeacialty name="中小学校长" />
+	<LearnSpeacialty name="师德教育" />
+	<LearnSpeacialty name="心理健康教育" />
+	<LearnSpeacialty name="特殊教育" />
+	<LearnSpeacialty name="班主任" />
+</LearnSpeacialtys>

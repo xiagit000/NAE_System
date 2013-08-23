@@ -1,0 +1,34 @@
+﻿<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+
+   <div class="side_bar">
+			<h1 class="sider_menu"><span class="img folder"></span>个人管理</h1>
+				<ul class="ul_list">
+					<li><r:a href="/user/me">个人信息</r:a></li>
+					<li><r:a href="/user/changepass">修改密码</r:a></li>
+				</ul>
+
+			<h1 class="sider_menu" ><span class="img folder"></span>学习功能区</h1>
+				<ul class="ul_list">
+					
+					<li><r:a href="/learnclass/show">班级信息</r:a></li>
+					<li><r:a href="/learnthesis/show">研修论文提交</r:a></li>
+					<li><r:a href="/grade/show">成绩查看</r:a></li>
+				</ul>
+					
+			<h1 class="sider_menu"><span class="img folder"></span>学习资料区</h1>
+				<ul class="ul_list">
+					<li><a href="${myClass}">我的班级空间</a></li>
+					<li><a href="${myXBYXPath}">校本研修空间</a></li>
+					<li><a href="${mySchoolPath}">我的学校空间</a></li>
+					<li><r:a href="/learnresource/disciplineresources">学科专家共享辅助资料</r:a></li>
+					<li><r:a href="/learnresource/projectresources">项目专家共享辅助资料</r:a></li>
+				</ul>
+
+			<h1 class="sider_menu"><span class="img search"></span>我要提问</h1>
+				<ul class="ul_list">
+					<li><r:a href="/question/mine">我问老师</r:a></li>
+				</ul>
+			
+	</div>

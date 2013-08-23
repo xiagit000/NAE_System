@@ -1,0 +1,97 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import java.util.Date;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.Graduate;
+import com.boventech.gplearn.entity.GraduateStandard;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.entity.Graduate.GraduateStatus;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.GraduateService;
+import com.boventech.gplearn.service.GraduateStandardService;
+
+@Controller
+@RequestMapping(value = "graduate")
+public class GraduateController extends ApplicationController {
+
+    @Autowired
+    private GraduateService graduateService;
+
+    @Autowired
+    private GraduateStandardService graduateStandardService;
+    
+    @Autowired
+    private BatchService batchService;
+    
+    @RequiredPrivilege(value={Privilege.SYSTEM_GRADUATE})
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model,HttpServletRequest request, Integer page,RedirectAttributes redirect) {
+    	Batch batch  = batchService.getCurrentBatch();
+    	if(checkEntityEmpty(batch)){
+			sendErrorMessageWhenRedirect(redirect,"learnPlan.currentbatch.null");
+			return "redirect:/batch";
+		}
+    	setSiteBarActive("xw", "graduate", request);
+    	GraduateStandard gs = graduateStandardService.getCurrentBatchGraduateStandard(batch);
+    	if(checkEntityEmpty(gs)){
+    		sendErrorMessageWhenRedirect(redirect, "graduate.empty");
+    		return "redirect:/graduateStandard";
+    	}
+    	Date date = new Date();
+    	if(date.before(gs.getGraduateTime())){
+    		sendWarningWhenRedirect(redirect, "graduate.time.error");
+    		return "redirect:/";
+    	}else{
+    	    this.graduateService.updateAllStatus();
+    	}
+        model.addAttribute("graduates", this.graduateService.listAllWithPagenate(page));
+        return "graduate/index";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_GRADUATE})
+    @RequestMapping(value = "/{id}/specialApprovalGraduated", method = RequestMethod.GET)
+    public String specialApprovalGraduated(ModelMap model, Integer page, @PathVariable String id,
+            final RedirectAttributes redirectAttrs) {
+        Graduate graduate = this.graduateService.findById(Long.parseLong(id));
+        graduate.setGraduateStatus(GraduateStatus.Special_Approval_Graduated);
+        this.graduateService.update(graduate);
+        sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+        return "redirect:/graduate";
+    }
+    
+    @RequiredPrivilege(value={Privilege.SYSTEM_GRADUATE})
+    @RequestMapping(value = "/{id}/noGraduated", method = RequestMethod.GET)
+    public String noGraduated(ModelMap model, Integer page, @PathVariable String id,
+            final RedirectAttributes redirectAttrs) {
+        Graduate graduate = this.graduateService.findById(Long.parseLong(id));
+        graduate.setGraduateStatus(GraduateStatus.NoGraduate);
+        this.graduateService.update(graduate);
+        sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+        return "redirect:/graduate";
+    }
+}

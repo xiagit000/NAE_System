@@ -1,0 +1,31 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<r:layout title="查看培训区域" >
+         <ul class="breadcrumb">
+              <li><r:a href="/">首页</r:a> <span class="divider">/</span></li>
+              <li><r:a href="/learnArea">培训区域管理</r:a> <span class="divider">/</span></li>
+              <li class="active">查看培训区域</li>
+          </ul>
+            
+         <input id="name" name="name" type="hidden" value="${learnArea.name }"/>
+         <input id="elCode" name="elCode" type="hidden" value="${learnArea.elCode }"/>
+         
+         <table class="table table-hover" >
+         <tbody>
+         <tr><td><b>招生区域名称：</b>${learnArea.name }</td></tr>
+         <tr><td><b>负责人姓名：</b>${learnArea.personIncharge }</tr>
+         <tr><td><b>住址：</b>${learnArea.address }</tr>
+         <tr><td><b>电话：</b>${learnArea.tel }</tr>
+         <tr><td><b>邮箱：</b>${learnArea.email }</tr>
+         <tr><td><b>邮政编码：</b>${learnArea.zipCode }</tr>
+         <tr><td><b>是否开启：</b><input type="checkbox" name="status" ${learnArea.status==true?'checked="checked"':""} disabled="disabled"/></td></tr>
+         </tbody>
+         </table>
+
+         <r:a href="/learnArea/${learnArea.id }/edit" class="btn">编辑</r:a>
+         &nbsp;&nbsp;
+         <r:a href="/learnArea" class="btn">返回</r:a>
+</r:layout>

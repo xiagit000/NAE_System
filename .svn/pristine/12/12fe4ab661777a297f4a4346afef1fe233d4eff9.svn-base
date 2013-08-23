@@ -1,0 +1,75 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.NotificationDao;
+import com.boventech.gplearn.entity.Notification;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.NotificationService;
+
+@Service
+@Transactional
+public class NotificationServiceImpl implements NotificationService{
+
+    @Autowired
+    private NotificationDao notificationDao;
+    
+    @Override
+    public void save(Notification t) {
+        notificationDao.save(t);
+        
+    }
+
+    @Override
+    public void delete(Notification t) {
+        notificationDao.delete(t);
+        
+    }
+
+    @Override
+    public void delete(Long id) {
+        notificationDao.deleteById(id);
+        
+    }
+
+    @Override
+    public void update(Notification t) {
+        notificationDao.update(t);
+        
+    }
+
+    @Override
+    public Notification findById(Long id) {
+       return  notificationDao.findByID(id);
+    }
+
+    @Override
+    public List<Notification> listAll() {
+        List<Notification> list=notificationDao.listAll();
+        return list;
+    }
+
+    @Override
+    public List<Notification> listReceiver(User user) {
+        List<Notification> list=notificationDao.listReceiver(user);
+        return list;
+    }
+
+}

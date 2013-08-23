@@ -1,0 +1,239 @@
+package com.boventech.gplearn.util;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.boventech.gplearn.entity.Constants;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.User.UserType;
+
+import sun.misc.BASE64Encoder;
+
+public class CASPlatformHttpClient {
+
+private static final Logger LOGGER = LoggerFactory.getLogger(CASPlatformHttpClient.class);
+	
+	private DefaultHttpClient client;
+	
+	private BASE64Encoder encoder;
+	
+	private String baseURL;
+	
+	private String account;
+	
+	private String secret;
+	
+	private String domainid;
+	
+	public CASPlatformHttpClient(){
+		this.client = new DefaultHttpClient();
+		this.encoder=new BASE64Encoder();
+		this.baseURL=LoadProperties.getProperty(Constants.CAS_BASE_URL_KEY);
+		this.account=LoadProperties.getProperty(Constants.CAS_HEADER_ACCOUNT_KEY);
+		this.secret=encoder.encode(LoadProperties.getProperty(Constants.CAS_HEADER_SECRET_KEY).getBytes());
+		this.domainid=LoadProperties.getProperty(Constants.CAS_HEADER_DOMAINID_KEY);
+	}
+	
+	/**
+	 * 添加用户信息到CAS
+	 * @param user 用户信息
+	 * @return 响应状态码
+	 */
+	public Integer createUserToCAS(User user){
+		Integer statusCode = null;
+		
+		String username=user.getLoginName();
+		String customrole = user.getUserType().toString();
+		String realname=user.getRealName();
+		try {
+			realname = this.encoder.encode(realname.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e1) {
+			LOGGER.error(e1.getMessage());
+		}
+		String password=user.getPassword();
+		UserType currentUserType = user.getUserType();
+		Integer roleId=checkUserRole(currentUserType);
+		
+		String createURL = LoadProperties.getProperty(Constants.CAS_USER_ADD_URL_KEY);
+		String postURL=this.baseURL+createURL;
+		
+		HttpPost post = new HttpPost(postURL);
+		post.setHeader(Constants.CAS_ACCOUNT,this.account);
+		post.setHeader(Constants.CAS_DOMAINID,this.domainid);
+		post.setHeader(Constants.CAS_SECRET,this.secret);
+		post.setHeader(Constants.CAS_HEADER_USERNAME,username);
+		post.setHeader(Constants.CAS_HEADER_REALNAME,realname);
+		post.setHeader(Constants.CAS_HEADER_PASSWORD, password);
+		post.setHeader(Constants.CAS_HEADER_ROLEID, roleId.toString());
+		post.setHeader(Constants.CAS_HEADER_CUSTOMROLE, customrole);
+		try {
+			HttpResponse response=this.client.execute(post);
+			String backResponseInfo = translateInputStreamToString(response.getEntity().getContent());
+			statusCode=response.getStatusLine().getStatusCode();
+			System.out.println("createUserToCAS:"+backResponseInfo);
+			post.abort();
+		} catch (ClientProtocolException e) {
+			LOGGER.error(e.getMessage());
+		} catch (IOException e) {
+			LOGGER.error(e.getMessage());
+		}
+		return statusCode;
+	}
+	
+	/**
+	 * 修改用户信息到CAS（一般用于修改密码和名字）
+	 * @param user 用户信息
+	 * @return
+	 */
+	public Integer updateUserFromCAS(User user){
+		Integer statusCode = null;
+		
+		String username=user.getLoginName();
+		String customrole = user.getUserType().toString();
+		String realname=user.getRealName();
+		try {
+			realname = this.encoder.encode(realname.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e1) {
+			LOGGER.error(e1.getMessage());
+		}
+		String password=user.getPassword();
+		UserType currentUserType = user.getUserType();
+		Integer roleId=checkUserRole(currentUserType);
+		
+		String updateURL = LoadProperties.getProperty(Constants.CAS_USER_UPDATE_URL_KEY);
+		String postURL=this.baseURL+updateURL;
+		
+		HttpPost post = new HttpPost(postURL);
+		post.setHeader(Constants.CAS_ACCOUNT,this.account);
+		post.setHeader(Constants.CAS_DOMAINID,this.domainid);
+		post.setHeader(Constants.CAS_SECRET,this.secret);
+		post.setHeader(Constants.CAS_HEADER_USERNAME,username);
+		post.setHeader(Constants.CAS_HEADER_REALNAME,realname);
+		post.setHeader(Constants.CAS_HEADER_PASSWORD, password);
+		post.setHeader(Constants.CAS_HEADER_ROLEID, roleId.toString());
+		post.setHeader(Constants.CAS_HEADER_CUSTOMROLE, customrole);
+		try {
+			HttpResponse response=this.client.execute(post);
+			String backResponseInfo = translateInputStreamToString(response.getEntity().getContent());
+			statusCode=response.getStatusLine().getStatusCode();
+			System.out.println("updateUserFromCAS:"+backResponseInfo);
+			post.abort();
+		} catch (ClientProtocolException e) {
+			LOGGER.error(e.getMessage());
+		} catch (IOException e) {
+			LOGGER.error(e.getMessage());
+		}
+		return statusCode;
+	}
+	
+	/**
+	 * 将用户从CAS中删除
+	 * @param userLoginName
+	 * @return
+	 */
+	public Integer destroyUserFromCAS(String userLoginName){
+		Integer statusCode = null;
+		String destroyURL = LoadProperties.getProperty(Constants.CAS_USER_DESTROY_URL_KEY);
+		String deleteURL = this.baseURL+destroyURL;
+		HttpDelete delete = new HttpDelete(deleteURL);
+		delete.setHeader(Constants.CAS_ACCOUNT,this.account);
+		delete.setHeader(Constants.CAS_DOMAINID,this.domainid);
+		delete.setHeader(Constants.CAS_SECRET,this.secret);
+		delete.setHeader(Constants.CAS_HEADER_USERNAME,userLoginName);
+		try {
+			HttpResponse response=this.client.execute(delete);
+			String backResponseInfo = translateInputStreamToString(response.getEntity().getContent());
+			statusCode=response.getStatusLine().getStatusCode();
+			System.out.println("destroyUserFromCAS:"+backResponseInfo);
+			delete.abort();
+		} catch (ClientProtocolException e) {
+			LOGGER.error(e.getMessage());
+		} catch (IOException e) {
+			LOGGER.error(e.getMessage());
+		}
+		return statusCode;
+		
+	}
+	
+	/**
+	 * 从CAS登出
+	 */
+	public Integer logout(){
+		Integer statusCode=null;
+		String getURL=this.baseURL+"cas/logout";
+		HttpGet get = new HttpGet(getURL);
+		try {
+			HttpResponse response=this.client.execute(get);
+			String back="*********************"+translateInputStreamToString(response.getEntity().getContent());
+			System.out.println(back);
+			statusCode=response.getStatusLine().getStatusCode();
+			get.abort();
+		} catch (ClientProtocolException e){
+			LOGGER.error(e.getMessage());
+		} catch (IOException e) {
+			LOGGER.error(e.getMessage());
+		}
+		return statusCode;
+	}
+	
+	/**
+	 * 检查当前用户权限，定义当前用户在CAS系统中的ROLEID
+	 * @param userType
+	 * @return
+	 */
+	private Integer checkUserRole(UserType userType){
+		if(userType.equals(UserType.System_Administrator)){
+			return Constants.CAS_SYSTEM_ADMIN;
+		}
+		if(userType.equals(UserType.Teacher)){
+			return Constants.CAS_TEACHER;
+		}
+		if(userType.equals(UserType.Student)){
+			return Constants.CAS_STUDENT;
+		}
+		if(userType.equals(UserType.Subject_Specialists)){
+			return Constants.CAS_STUDYSPACE_ADMIN;
+		}
+		return Constants.CAS_OTHER;
+	}
+
+	/**
+	 * 将响应的内容提取出来
+	 * @param is
+	 * @return
+	 */
+	private String translateInputStreamToString(InputStream is){
+    	StringBuffer sb = new StringBuffer();
+    	BufferedReader reader= new BufferedReader(new InputStreamReader(is));
+    	
+    	String line=null;
+    	try {
+			while((line=reader.readLine())!=null){
+				sb.append(line);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    	finally{
+    		try {
+				is.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}
+    	
+    	return sb.toString();
+    }
+}

@@ -1,0 +1,85 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>  
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+
+<r:javascript name="/resources/js/learnlevel/add.js"></r:javascript>
+<r:layout title="培训学科 | 编辑培训学科" >
+<jsp:include page="../layout/administrator_navbar.jsp" />
+<div class="wrapper">
+	<ul class="breadcrumb">
+		<li><r:a href="/">首页</r:a> <span class="divider">/</span></li>
+		<li><r:a href="/discipline">学科列表</r:a> <span class="divider">/</span></li>
+		<li class="active">编辑培训学科</li>
+	</ul>
+	
+	<form id="add_form" action="<c:url value='/discipline/${discipline.id}' />" method="post">
+		<input type="hidden" value="${discipline.id}" />
+		<input type="hidden" value="put" name="_method" />
+		<table class="table">
+			<tbody>
+				<tr>
+					<th colspan="2">选择培训层次</th>
+				</tr>
+				<tr>
+					<td>
+						<select name="learnLevelId">
+							<c:forEach var="learnLevel" items="${learnLevelList}">
+								
+								<option value="${learnLevel.id}" <c:if test="${learnLevel.id eq discipline.learnLevel.id}">selected="selected"</c:if>>${learnLevel.name}</option>	
+							</c:forEach>
+						</select>
+					</td>
+					<td>
+						<label for="learnlevel_id" class="error" generated="true" style="color:red;font-size:12px;"></label>
+					</td>
+				</tr>
+				<tr>
+					<th colspan="2">选择培训专业</th>
+				</tr>
+				<tr>
+					<td>
+						<select name="learnSpeacialtyId">
+							<c:forEach var="learnSpeacialty" items="${learnSpeacialtyList}">
+								<option value="${learnSpeacialty.id}" <c:if test="${learnSpeacialty.id eq discipline.learnSpeacialty.id}">selected="selected"</c:if> >${learnSpeacialty.name}</option>	
+							</c:forEach>
+						</select>
+					</td>
+					<td>
+						<label for="learnlevel_id" class="error" generated="true" style="color:red;font-size:12px;"></label>
+					</td>
+				</tr>
+				<tr>
+					<th colspan="2">培训范围</th>
+				</tr>
+				<tr>
+					<td>
+						<select name="learnRange">
+							<c:forEach var = "lr" items="${learnRages}">
+								<option value="${lr}" <c:if test="${lr eq discipline.learnRange}">selected="selected"</c:if> ><fmt:message key="${lr}" /></option>
+							</c:forEach>
+						</select>
+					</td>
+				</tr>
+				
+				<tr>
+					<th colspan="2">学科代码</th>
+				</tr>
+				
+				<tr>
+					<td>
+						<input type="text" name="code"  value="${discipline.code}" placeholder="请输入培训学科代码">
+					</td>
+					<td>
+						<label for="code" class="error" generated="true" style="color:red;font-size:12px;"></label>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2"><button type="submit" class="button">更新</button> <r:a href="/discipline" class="button">取消</r:a></td>
+				</tr>
+			</tbody>
+		</table>
+	</form>
+</div>
+</r:layout>

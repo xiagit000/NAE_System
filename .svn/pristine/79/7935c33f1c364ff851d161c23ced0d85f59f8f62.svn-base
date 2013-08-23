@@ -1,0 +1,27 @@
+#mysql
+jpa.databasetype=MySQL
+#jpa.dialect=org.hibernate.dialect.MySQLDialect
+jdbc.dialect=com.boventech.gplearn.util.MySQLDialect
+#jdbc.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+jdbc.driverClass=com.mysql.jdbc.Driver
+#jdbc.jdbcUrl=jdbc\:mysql\:///gplearn?useUnicode\=true&characterEncoding\=UTF-8
+jdbc.jdbcUrl=jdbc:mysql://localhost:3306/gplearn?useUnicode=true&characterEncoding=UTF-8
+jdbc.user=root
+jdbc.password=root
+jdbc.minPoolSize=2
+jdbc.maxPoolSize=5
+jdbc.initialPoolSize=5
+jdbc.acquireIncrement=1
+jdbc.maxIdleTime=600
+jdbc.maxStatements=0
+
+#Hibernate Properties
+jpa.hbm2ddl.auto=update
+jpa.showSql=false
+jpa.generateDDL=true
+jpa.formatSql=true
+
+#jdbc.testConnectionOnCheckin = true
+#jdbc.automaticTestTable = c3p0TestTable
+#jdbc.idleConnectionTestPeriod = 30
+#jdbc.checkoutTimeout=3000

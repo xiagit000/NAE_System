@@ -1,0 +1,102 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.Notification;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.NotificationService;
+import com.boventech.gplearn.service.UserService;
+
+@Controller
+@RequestMapping(value = "/notification")
+public class NotificationController extends ApplicationController{
+
+    @Autowired
+    private NotificationService notificationService;
+    @Autowired
+    private UserService userService;
+    
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model) {       
+        List<Notification> notifications = this.notificationService.listAll();
+        model.addAttribute("notifications", notifications);
+        return "/notification/index";
+    }
+
+    @RequestMapping(method = RequestMethod.POST)
+    public String create(Model model, Notification notification,@RequestParam(value="receiverId") String receiverId,final RedirectAttributes redirectAttrs) {
+        User suser=userService.findById(Long.parseLong("5")); 
+        User ruser=userService.findById(Long.parseLong(receiverId)); 
+        notification.setSender(suser);
+        notification.setReceiver(ruser);
+        notification.setTime(new Date());
+        notification.setRead(false);
+        this.notificationService.save(notification);
+        sendNoticeWhenRedirect(redirectAttrs, "common.add.success");
+        return "redirect:/notification";
+    }
+
+    @RequestMapping(value = "/{id}/receive", method = RequestMethod.POST)
+    public String update(ModelMap model, @PathVariable String id,@RequestParam(value="receiverId") String receiverId, Notification notification,final RedirectAttributes redirectAttrs) {
+        
+        User ruser=userService.findById(Long.parseLong(receiverId)); 
+        notification.setReceiver(ruser);
+        notification.setTime(new Date());
+        notification.setId(null);
+        this.notificationService.save(notification);
+        sendNoticeWhenRedirect(redirectAttrs, "common.add.success");
+        model.addAttribute("notification",notification);
+        return "/notification/show";
+    }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public String destroy(ModelMap model, @PathVariable String id,final RedirectAttributes redirectAttrs) {
+        notificationService.delete(Long.parseLong(id));
+        sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+        return "redirect:/notification";
+    }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public String show(ModelMap model, @PathVariable String id) {
+        Notification notification=notificationService.findById(Long.parseLong(id));
+        notification.setRead(true);
+        notificationService.update(notification);
+        model.addAttribute("notification",notification);
+        return "/notification/show";
+    }
+
+    @RequestMapping(value = "/{id}/receive", method = RequestMethod.GET)
+    public String edit(ModelMap model, @PathVariable String id) {
+        model.addAttribute("id",id);
+        return "/notification/receive";
+    }
+
+    @RequestMapping(value = "/new", method = RequestMethod.GET)
+    public String editNew(ModelMap model) {
+        return "/notification/add";
+    }
+}

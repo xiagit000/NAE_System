@@ -1,0 +1,163 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.City;
+import com.boventech.gplearn.entity.LearnArea;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.service.CityService;
+import com.boventech.gplearn.service.LearnAreaService;
+
+@Controller
+@RequestMapping(value = "/learnArea")
+public class LearnAreaController extends ApplicationController {
+
+    @Autowired
+    private LearnAreaService learnAreaService;
+
+    @Autowired
+    private CityService cityService;
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_LEARNAREA})
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model,HttpServletRequest request) {
+    	setSiteBarActive("jc", "learnArea", request);
+        List<LearnArea> areas = this.learnAreaService.listAll();
+        model.addAttribute("areas", areas);
+        return "learnArea/index";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_LEARNAREA})
+    @RequestMapping(method = RequestMethod.POST)
+    public String create(Model model, LearnArea learnArea) {
+        if (learnAreaService.isExistByCode(learnArea.getCode())) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", learnArea.getCode());
+            model.addAttribute("learnArea", learnArea);
+            model.addAttribute("cities", cityService.getAllCities());
+            model.addAttribute("provinces", cityService.getProvinces());
+            return "learnArea/add";
+        }
+        if (learnAreaService.isExistByName(learnArea.getName())) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", learnArea.getName());
+            model.addAttribute("learnArea", learnArea);
+            model.addAttribute("cities", cityService.getCitiesByProvince("11"));
+            model.addAttribute("provinces", cityService.getProvinces());
+            return "learnArea/add";
+        }
+        this.learnAreaService.save(learnArea);
+        return "redirect:/learnArea";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_LEARNAREA})
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public String create(Model model, @PathVariable String id, final RedirectAttributes redirectAttrs,
+            LearnArea learnArea) {
+        if (learnAreaService.isExistByCodeWithoutCurrent(learnArea)) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", learnArea.getCode());
+            model.addAttribute("learnArea", learnArea);
+            model.addAttribute("cities", cityService.getAllCities());
+            model.addAttribute("provinces", cityService.getProvinces());
+            return "learnArea/edit";
+        }
+        if (learnAreaService.isExistByNameWithoutCurrent(learnArea)) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", learnArea.getName());
+            model.addAttribute("learnArea", learnArea);
+            model.addAttribute("cities", cityService.getAllCities());
+            model.addAttribute("provinces", cityService.getProvinces());
+            return "learnArea/edit";
+        }
+        this.learnAreaService.update(learnArea);
+        sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+        return "redirect:/learnArea";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_LEARNAREA})
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public String destroy(Model model, @PathVariable String id, final RedirectAttributes redirectAttrs) {
+        if (isNull(redirectAttrs, model, false, id)) {
+            return "redirect:/learnArea";
+        }
+        try {
+            this.learnAreaService.delete(Long.parseLong(id));
+            sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+        } catch (RuntimeException e) {
+            sendErrorMessageWhenRedirect(redirectAttrs, "common.hasnode.warn");
+            e.printStackTrace();
+            return "redirect:/learnArea";
+        }
+        return "redirect:/learnArea";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_LEARNAREA})
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public String show(Model model, @PathVariable String id, final RedirectAttributes redirectAttrs) {
+        if (isNull(redirectAttrs, model, true, id)) {
+            return "redirect:/learnArea";
+        }
+        return "/learnArea/show";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_LEARNAREA})
+    @RequestMapping(value = "/{id}/edit", method = RequestMethod.GET)
+    public String edit(Model model, @PathVariable String id, final RedirectAttributes redirectAttrs) {
+        if (isNull(redirectAttrs, model, true, id)) {
+            return "redirect:/learnArea";
+        }
+        return "/learnArea/edit";
+    }
+
+    @RequiredPrivilege(value={Privilege.SYSTEM_LEARNAREA})
+    @RequestMapping(value = "/new", method = RequestMethod.GET)
+    public String editNew(ModelMap model) {
+        List<City> provinces = this.cityService.getProvinces();
+        model.addAttribute("provinces", provinces);
+        return "/learnArea/add";
+    }
+    
+    @RequiredPrivilege(value={Privilege.SYSTEM_LEARNAREA})
+    @RequestMapping(value="/showexsitprovice")
+    public String showExsitProvice(Model model){
+    	List<City> areas = learnAreaService.getExistProvince();
+    	model.addAttribute("areas", areas);
+    	return "learnArea/personincharge/index";
+    }
+
+    private boolean isNull(final RedirectAttributes redirectAttrs, Model model, boolean whithModel, String id) {
+        LearnArea learnArea = this.learnAreaService.findById(Long.parseLong(id));
+        if (null == learnArea) {
+            sendErrorMessageWithParameterWhenRedirect(redirectAttrs, "common.obj.notfound", "id:" + id);
+            return true;
+        } else {
+            if (whithModel) {
+                model.addAttribute("learnArea", learnArea);
+                model.addAttribute("provinces", cityService.getProvinces());
+            }
+            return false;
+        }
+    }
+}

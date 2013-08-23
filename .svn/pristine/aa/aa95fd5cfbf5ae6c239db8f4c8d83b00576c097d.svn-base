@@ -1,0 +1,73 @@
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import com.boventech.gplearn.dao.SchoolRollDao;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.SchoolRoll;
+import com.boventech.gplearn.entity.User;
+
+public class SchoolRollDaoImpl extends BaseDaoImpl<SchoolRoll, Long> implements SchoolRollDao {
+
+    private static final String DEFAULT_ORDER = " ORDER BY sr.id DESC";
+
+    @Override
+    public List<SchoolRoll> listActiveSchoolRoll(Integer page) {
+        String queryString = "FROM SchoolRoll sr WHERE sr.newest=?1";
+        return executeQueryWithPagination(queryString, DEFAULT_ORDER, page, true);
+    }
+
+    @Override
+    public List<SchoolRoll> listAllInformationByUserId(Long userId) {
+        String queryString = "FROM SchoolRoll sr WHERE sr.user.id=?1";
+        return executeQueryWithoutPaging(queryString, userId);
+    }
+
+    @Override
+    public Integer countByLearnClass(LearnClass learnClass) {
+        return executeCountQuery("from SchoolRoll where learnClass=?1", learnClass);
+    }
+
+    @Override
+    public List<SchoolRoll> findByUser(User user) {
+        return executeQueryWithoutPaging("from SchoolRoll s where s.user=?1", user);
+    }
+
+    @Override
+    public Integer getUserNumberByLearnClass(LearnClass learnClass) {
+        return executeQueryWithoutPaging("From SchoolRoll s where s.learnClass=?1 group by user", learnClass)
+                .size();
+    }
+
+    @Override
+    public SchoolRoll findByUserNewest(User user) {
+        String queryString = "FROM SchoolRoll sr WHERE sr.user.id=?1 AND sr.newest=?2";
+        List<SchoolRoll> list = executeQueryWithoutPaging(queryString, user.getId(), true);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+	@Override
+	public List<SchoolRoll> findUsersByClass(LearnClass learnClass) {
+		String queryString = "FROM SchoolRoll sr WHERE sr.learnClass=?1 AND sr.newest=?2";
+		return executeQueryWithoutPaging(queryString, learnClass,true);
+	}
+
+	@Override
+	public void deleteByUser(User user) {
+		String queryString = "DELETE FROM SchoolRoll sr WHERE sr.user=?1";
+		executeUpdateOrDelete(queryString, user);
+	}
+
+	@Override
+	public boolean checkExistByUser(User user) {
+		String queryString="from SchoolRoll s where s.user=?1";
+		return !executeQueryWithoutPaging(queryString, user).isEmpty();
+	}
+
+	@Override
+	public List<SchoolRoll> listActiveByLearnClass(LearnClass learnClass) {
+		String queryString = "FROM SchoolRoll s where s.learnClass=?1 AND s.newest=?2";
+		return executeQueryWithoutPaging(queryString, learnClass,true);
+	}
+
+}

@@ -1,0 +1,33 @@
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.boventech.gplearn.dao.SenderNotificationDao;
+import com.boventech.gplearn.entity.SenderNotification;
+import com.boventech.gplearn.entity.User;
+
+@Repository
+public class SenderNotificationDaoImpl extends BaseDaoImpl<SenderNotification, Long> implements SenderNotificationDao{
+
+	@Override
+	public List<SenderNotification> listAllNotificationByUser(User user,
+			Integer page) {
+		String queryString="from SenderNotification s where s.sender=?1";
+		return executeQueryWithPagination(queryString, null, page, user);
+	}
+
+	@Override
+	public void delete(User user) {
+		String queryString = "DELETE FROM SenderNotification s WHERE s.sender=?1";
+		executeUpdateOrDelete(queryString, user);
+	}
+
+	@Override
+	public List<SenderNotification> listAll() {
+		String queryString  = "FROM SenderNotification s";
+		return executeQueryWithoutPaging(queryString);
+	}
+
+}

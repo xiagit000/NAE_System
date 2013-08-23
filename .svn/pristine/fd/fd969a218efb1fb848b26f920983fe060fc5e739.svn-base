@@ -1,0 +1,53 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.GraduateStandard;
+import com.boventech.gplearn.service.GraduateStandardService;
+
+@Controller
+@RequestMapping(value = "graduateStandard")
+public class GraduateStandardController extends ApplicationController {
+
+    @Autowired
+    private GraduateStandardService graduateStandardService;
+
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model) {
+        if (!this.graduateStandardService.checkeExist()) {
+            GraduateStandard graduate = new GraduateStandard();
+            graduate.setPassScore(0.6);
+            this.graduateStandardService.save(graduate);
+        }
+        model.addAttribute("graduateStandard", this.graduateStandardService.getDefalutStandard());
+        return "graduateStandard/index";
+    }
+
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public String update(ModelMap model, @PathVariable String id, GraduateStandard graduate,
+            final RedirectAttributes redirectAttrs) {
+        this.graduateStandardService.update(graduate);
+        sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+        return "redirect:/graduateStandard";
+    }
+}

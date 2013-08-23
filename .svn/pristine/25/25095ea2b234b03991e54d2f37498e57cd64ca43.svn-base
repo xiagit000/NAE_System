@@ -1,0 +1,43 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r"%>
+
+<r:layout title="学生提问列表">
+<jsp:include page="../../layout/teacher_navbar.jsp" />
+<div class="wrapper">
+	<ul class="breadcrumb">
+		<li><r:a href="/">首页</r:a> <span class="divider">/</span></li>
+		<li class="active">学生的提问列表</li>
+	</ul>
+	 <table class="table table-hover" >
+     	<tr>
+     		<th>编号</th>
+     		<th>问题</th>
+     		<th>提问人</th>
+     		<th>是否已解答</th>
+     		<th>操作</th>
+     	</tr>
+     	<c:forEach items="${questions}" var="question" varStatus="status">
+     		<tr>
+     			<td><span class="badge">${status.index+1}</span></td>
+     			<td><r:a href="/question/${question.id}/resolved">${question.askTitle}</r:a></td>
+     			<td>${question.asker.realName}[${question.asker.loginName}]</td>
+     			<td>
+     				<c:if test="${question.resolved}">已解答</c:if>
+     				<c:if test="${!question.resolved}">未解答</c:if>
+     			</td>
+     			<td>
+     				
+     				<c:if test="${!question.resolved}"><r:a href="/question/${question.id}/resolve">帮他(她)解答</r:a></c:if>
+     				<c:if test="${question.resolved}"><r:a href="/question/${question.id}/resolved">查看解答结果</r:a></c:if>
+     			</td>
+     		</tr>
+     		
+     	</c:forEach>
+     </table>
+     <div class="toolbar"><div class="pagination pagination-centered"><r:paginate data="${questions}"></r:paginate></div></div>
+</div>
+</r:layout>

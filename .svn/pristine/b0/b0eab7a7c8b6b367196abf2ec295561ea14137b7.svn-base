@@ -1,0 +1,144 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import sun.misc.BASE64Encoder;
+
+import com.boventech.gplearn.dao.UserDao;
+import com.boventech.gplearn.entity.Account;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.User.UserType;
+import com.boventech.gplearn.service.UserService;
+import com.boventech.gplearn.util.ExcelExporter;
+import com.boventech.gplearn.util.ObjectFiller;
+
+@Service
+@Transactional
+public class UserServiceImpl implements UserService {
+
+    @Autowired
+    private UserDao userDao;
+    
+    @Override
+    public void save(User t) {
+        this.userDao.save(t);
+    }
+
+    @Override
+    public void save(List<User> users) {
+        this.userDao.save(users);
+    }
+
+    @Override
+    public void delete(User t) {
+        this.userDao.delete(t);
+    }
+
+    @Override
+    public void delete(Long id) {
+        this.userDao.deleteById(id);
+    }
+
+    @Override
+    public void update(User t) {
+        this.userDao.update(t);
+    }
+
+    @Override
+    public User findById(Long id) {
+        return this.userDao.findByID(id);
+    }
+
+    @Override
+    public Long getMaxIndex() {
+        return this.userDao.getMaxIndex();
+    }
+
+    @Override
+    public List<User> generateUsers(List<Account> accounts, EnrollmentPlan enrollmentPlan) {
+        List<User> users = new ArrayList<User>();
+        for (Account account : accounts) {
+            User user = new User();
+            user.setUserType(UserType.Student);
+            user.setLoginName(getLoginName(enrollmentPlan));
+            user.setPassword((new BASE64Encoder()).encode(account.getIdNumber().getBytes()));
+            user.setAccount(account);
+            user.setBatch(enrollmentPlan.getBatch());
+            user.setActive(false);
+            user.setRealName(account.getName());
+            users.add(user);
+        }
+        return users;
+    }
+
+    private String getLoginName(EnrollmentPlan enrollmentPlan) {
+        String name = "gp";
+        name += getYear();
+        name += getAreaCode(enrollmentPlan);
+        name += getDisciplineCode(enrollmentPlan);
+        return name;
+    }
+
+    private String getYear() {
+        @SuppressWarnings("deprecation")
+        String year = String.valueOf(new Date().getYear() % 100);
+        return year;
+    }
+
+    private String getAreaCode(EnrollmentPlan enrollmentPlan) {
+        return enrollmentPlan.getLearnClass().getLearnArea().getElCode().split("-")[0];
+    }
+
+    private String getDisciplineCode(EnrollmentPlan enrollmentPlan) {
+        return enrollmentPlan.getLearnClass().getLearnProject().getDiscipline().getCode();
+    }
+
+    @Override
+    public List<User> listAllWithPagnate(Integer page) {
+        return this.userDao.listAllWithPagnate(page);
+    }
+
+    @Override
+    public void exportExcel(HttpServletResponse response, List<String> heads, String fileName,
+            String description, ObjectFiller filler) {
+        new ExcelExporter().exportXLS(response, heads, fileName, description, filler);
+    }
+
+    @Override
+    public List<User> listAllWithoutPagnate() {
+        return this.userDao.listAllWithoutPagnate();
+    }
+
+	@Override
+	public boolean checkEntityExsitByLoginName(String loginName) {
+		return userDao.checkEntityExsitByLoginName(loginName);
+	}
+
+	@Override
+	public User findByLoginName(String loginName) {
+		return userDao.findByLoginName(loginName);
+	}
+
+}

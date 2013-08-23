@@ -1,0 +1,51 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.boventech.gplearn.dao.AnnouncementDao;
+import com.boventech.gplearn.entity.Announcement;
+import com.boventech.gplearn.entity.User;
+
+@Repository
+public class AnnouncementDaoImpl extends BaseDaoImpl<Announcement, Long> implements AnnouncementDao {
+
+    @Override
+    public List<Announcement> listAll() {
+
+        return executeQueryWithoutPaging("FROM Announcement");
+    }
+
+    @Override
+    public List<Announcement> listAll(User user) {
+        String queryString = "FROM Announcement an WHERE user=? ";
+        return executeQueryWithoutPaging(queryString, user);
+    }
+
+    @Override
+    public List<Announcement> listAllByUserType(User user) {
+        String queryString = "FROM Announcement an WHERE user.userType=? ";
+        return executeQueryWithoutPaging(queryString, user.getUserType());
+    }
+
+    @Override
+    public List<Announcement> listAllByOtherType() {
+        String queryString = "FROM Announcement an WHERE user.userType = 'System_Administrator' or user.userType = 'Subject_Specialists' or  user.userType = 'Project_Specialists' ";
+        return executeQueryWithoutPaging(queryString);
+    }
+
+}

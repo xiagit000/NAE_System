@@ -1,0 +1,78 @@
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import com.boventech.gplearn.dao.LearnPlanDao;
+import com.boventech.gplearn.entity.LearnPlan;
+import com.boventech.gplearn.entity.LearnSubProject;
+
+public class LearnPlanDaoImpl extends BaseDaoImpl<LearnPlan, Long> implements
+		LearnPlanDao {
+
+	private static final String DEFAULT_ORDER = " ORDER BY lp.id DESC";
+
+	@Override
+	public List<LearnPlan> listWithPagination(Integer page) {
+		String queryString = "FROM LearnPlan lp";
+		return executeQueryWithPagination(queryString, DEFAULT_ORDER, page);
+	}
+
+	@Override
+	public boolean isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRange(
+			LearnPlan learnPlan) {
+		String queryString = "FROM LearnPlan lp WHERE lp.batch.id=?1 AND lp.learnRange=?2 AND lp.learnSubProject.id=?3 AND lp.learnCourse.id=?4";
+		return !executeQueryWithoutPaging(queryString,
+				learnPlan.getBatch().getId(), learnPlan.getLearnRange(),
+				learnPlan.getLearnSubProject().getId(),
+				learnPlan.getLearnCourse().getId()).isEmpty();
+	}
+
+	@Override
+	public boolean isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRangeWithOutCurrent(
+			LearnPlan learnPlan) {
+		String queryString  = "FROM LearnPlan lp WHERE lp.batch.id=?1 AND lp.learnRange=?2 AND lp.learnSubProject.id=?3 AND lp.learnCourse.id=?4 AND lp.id <> ?5";
+		return !executeQueryWithoutPaging(queryString,
+				learnPlan.getBatch().getId(),learnPlan.getLearnRange(),
+				learnPlan.getLearnSubProject().getId(),
+				learnPlan.getLearnCourse().getId(),
+				learnPlan.getId()).isEmpty();
+	}
+
+	@Override
+	public boolean isExsitByCode(String code) {
+		String queryString = "FROM LearnPlan lp WHERE lp.code = ?1";
+		return !executeQueryWithoutPaging(queryString, code).isEmpty();
+	}
+
+	@Override
+	public boolean isExsitByName(String name) {
+		String queryString = "FROM LearnPlan lp WHERE lp.name = ?1";
+		return !executeQueryWithoutPaging(queryString,name).isEmpty();
+	}
+
+	@Override
+	public boolean isExsitByCodeWithOutCurrent(LearnPlan learnPlan) {
+		String queryString = "FROM LearnPlan lp WHERE lp.code = ?1 AND lp.id<>?2";
+		return !executeQueryWithoutPaging(queryString, learnPlan.getCode(),learnPlan.getId()).isEmpty();
+	}
+
+	@Override
+	public boolean isExsitByNameWithOutCurrent(LearnPlan learnPlan) {
+		String queryString =  "FROM LearnPlan lp WHERE lp.name = ?1 AND lp.id <>?2";
+		return !executeQueryWithoutPaging(queryString, learnPlan.getName(),learnPlan.getId()).isEmpty();
+	}
+
+	@Override
+	public List<LearnPlan> listLearnCourseBylearnSubProject(
+			LearnSubProject learnSubProject) {
+		String queryString = "FROM LearnPlan lp WHERE lp.learnSubProject=?1";
+		return executeQueryWithoutPaging(queryString, learnSubProject);
+	}
+
+	@Override
+	public List<LearnPlan> listAll() {
+		String queryString  ="FROM LearnPlan";
+		return executeQueryWithoutPaging(queryString);
+	}
+
+}

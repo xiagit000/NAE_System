@@ -1,0 +1,35 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+
+<r:layout title="展示培训班级" >
+          <ul class="breadcrumb">
+              <li><r:a href="/">首页</r:a> <span class="divider">/</span></li>
+              <li><r:a href="/learnClass">培训班级管理</r:a> <span class="divider">/</span></li>
+              <li class="active">展示培训班级</li>
+            </ul>
+         <table class="table table-hover" >
+         <tbody>
+         <tr><td><b>班级代码：</b>${learnClass.code }</td></tr>
+         <tr><td><b>班级名称：</b>${learnClass.name }</td></tr>
+         <tr><td><b>班级全名：</b>${learnClass.allName }</td></tr>
+         <tr><td><b>培训区域：</b>${learnClass.learnProject.name }
+         </td></tr>
+         <tr><td><b>培训项目：</b>${learnClass.learnArea.name }
+         </td></tr>
+         <tr><td><b>负责人：</b>${learnClass.personIncharge }</td></tr>
+         <tr><td><b>电话：</b>${learnClass.tel }</td></tr>
+         <tr><td><b>邮箱：</b>${learnClass.zipCode }</td></tr>
+         <tr><td><b>住址：</b>${learnClass.address }</td></tr>
+         <tr><td><b>区号：</b>${learnClass.areaCode }</td></tr>
+         <tr><td><b>logo路径：</b>${learnClass.logoPath }</td></tr>
+         <tr><td><b>是否开启：</b><input type="checkbox" name="status" ${learnClass.status==true?'checked="checked"':""} disabled="disabled"/></td></tr>
+         </tbody>
+         </table>
+          <r:a href="/learnClass/${learnClass.id }/personincharge" class="btn">设置班级内学员为老师</r:a> 
+         <r:a href="/learnClass/${learnClass.id }/edit" class="btn">編輯</r:a>
+         &nbsp;&nbsp;
+         <r:a href="/learnClass" class="btn">取消</r:a>
+         </form>
+</r:layout>

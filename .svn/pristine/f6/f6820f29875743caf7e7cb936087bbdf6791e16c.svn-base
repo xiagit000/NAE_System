@@ -1,0 +1,41 @@
+$(function(){
+	
+	jQuery.validator.messages.required =
+		"<span class='error' generated='true' style='color: red; font-size: 12px;'>*请填写此内容</span>";
+
+	$("#add_form").validate({
+		rules : {
+			personIncharge : {required : true},
+			code : {required : true},
+			tel : {required : true},
+			email : {required : true},
+			zipCode : {required : true},
+		}
+	});
+	
+	showCity();
+	
+	$("#province").change(function(){
+    showCity();
+	});
+	
+	$("select[name='city']").each(function(){
+		$(this).change(function(){
+		    showCity();
+		});
+	});
+});
+
+function showCity(){
+	$("select[name='city']").each(function(){
+		$(this).hide();
+		var city=$(this).val().split("-")[0];
+		if(city==$("#province").val()){
+			$(this).show();
+			$("#name").val($("#province").find("option:selected").text()+$(this).find("option:selected").text());
+			$("#elCode").val($(this).val());
+		}
+	});
+	
+	
+}

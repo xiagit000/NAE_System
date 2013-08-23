@@ -1,0 +1,16 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>  
+
+<r:layout title="站内信" >
+<jsp:include page="../layout/mail_navbar.jsp" />
+<div class="wrapper">
+          <ul class="breadcrumb">
+          	  <li><r:a href="/">首页</r:a><span class="divider">/</span></li>
+              <li class="active"><r:a href="/">收件箱</r:a></li>
+          </ul>
+         
+ </div>
+</r:layout>

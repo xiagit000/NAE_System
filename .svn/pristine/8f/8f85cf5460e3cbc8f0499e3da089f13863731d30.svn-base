@@ -1,0 +1,26 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.SchoolSpace;
+
+public interface SchoolSpaceDao extends BaseDao<SchoolSpace, Long> {
+	boolean checkExistBySchoolName(String schoolName);
+
+	SchoolSpace findBySchoolName(String schoolName);
+
+	List<SchoolSpace> listByUncreate();
+}

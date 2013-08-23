@@ -1,0 +1,14 @@
+package com.boventech.gplearn.exception;
+
+public class StudySpaceClassRoomDestroyFaildException extends Exception {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3050344555494748834L;
+
+	@Override
+	public String getMessage() {
+		return "__________________________________StudySpaceClassRoomDestroyFaildException__________________________________";
+	}
+}

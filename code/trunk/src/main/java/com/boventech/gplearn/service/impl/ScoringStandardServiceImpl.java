@@ -1,0 +1,74 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.ScoringStandardDao;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.ScoringStandard;
+import com.boventech.gplearn.service.ScoringStandardService;
+
+@Service
+@Transactional
+public class ScoringStandardServiceImpl implements ScoringStandardService{
+    
+    @Autowired
+    private ScoringStandardDao scoringStandardDao;
+
+    @Override
+    public void update(ScoringStandard scoringStandard) {
+        this.scoringStandardDao.update(scoringStandard);
+    }
+
+    @Override
+    public boolean checkExist() {
+        return this.scoringStandardDao.checkExist();
+    }
+
+    @Override
+    public void save(ScoringStandard scoringStandard) {
+        this.scoringStandardDao.save(scoringStandard);
+    }
+
+    @Override
+    public void delete(ScoringStandard t) {
+        this.scoringStandardDao.delete(t);
+    }
+
+    @Override
+    public void delete(Long id) {
+        this.scoringStandardDao.deleteById(id);
+    }
+
+    @Override
+    public ScoringStandard findById(Long id) {
+        return this.scoringStandardDao.findByID(id);
+    }
+
+    @Override
+    public List<ScoringStandard> listAll() {
+        return this.scoringStandardDao.listAllWithoutPagnate();
+    }
+
+    @Override
+    public boolean checkExistByBatch(Batch batch) {
+        return this.scoringStandardDao.checkExistByBatch(batch);
+    }
+
+}

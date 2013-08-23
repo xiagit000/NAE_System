@@ -1,0 +1,1064 @@
+package com.boventech.gplearn.controller;
+
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.City;
+import com.boventech.gplearn.entity.Constants;
+import com.boventech.gplearn.entity.Discipline;
+import com.boventech.gplearn.entity.Grade;
+import com.boventech.gplearn.entity.LearnArea;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.LearnStatistics;
+import com.boventech.gplearn.entity.LearnSubProject;
+import com.boventech.gplearn.entity.LearnThesisSubmit;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.entity.Question;
+import com.boventech.gplearn.entity.SchoolSpace;
+import com.boventech.gplearn.entity.SpaceType;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.VideoInfo;
+import com.boventech.gplearn.entity.VideoStatistics;
+import com.boventech.gplearn.entity.LearnThesisSubmit.LearnThesisRating;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.CityService;
+import com.boventech.gplearn.service.DisciplineService;
+import com.boventech.gplearn.service.GradeService;
+import com.boventech.gplearn.service.LearnAreaService;
+import com.boventech.gplearn.service.LearnClassService;
+import com.boventech.gplearn.service.LearnSubProjectService;
+import com.boventech.gplearn.service.LearnThesisSubmitInfomationService;
+import com.boventech.gplearn.service.QuestionService;
+import com.boventech.gplearn.service.SchoolRollService;
+import com.boventech.gplearn.service.SchoolSpaceService;
+import com.boventech.gplearn.service.UserService;
+import com.boventech.gplearn.service.VideoService;
+import com.boventech.gplearn.service.VideoStatisticsService;
+import com.boventech.gplearn.util.StudyPlatformHttpClient;
+import com.google.common.collect.Lists;
+
+@Controller
+@RequestMapping(value = "/statistics")
+public class LearnStatisticController extends ApplicationController {
+
+	@Autowired
+	private SchoolRollService schoolRollService;
+
+	@Autowired
+	private LearnClassService learnClassService;
+
+	@Autowired
+	private LearnThesisSubmitInfomationService learnThesisSubmitServie;
+
+	@Autowired
+	private QuestionService questionService;
+
+	@Autowired
+	private GradeService gradeService;
+
+	@Autowired
+	private LearnSubProjectService learnSubProjectService;
+
+	@Autowired
+	private BatchService batchService;
+
+	@Autowired
+	private LearnAreaService learnAreaService;
+
+	@Autowired
+	private UserService userService;
+
+	@Autowired
+	private SchoolSpaceService schoolSpaceService;
+
+	@Autowired
+	private CityService cityService;
+	
+	@Autowired
+	private DisciplineService disciplineService;
+	
+	@Autowired
+	private VideoService videoService;
+	
+	@Autowired
+	private VideoStatisticsService videoStatisticsService;
+
+	@RequiredPrivilege(value = { Privilege.SUBJECT_SEARCH })
+	@RequestMapping(value = "/learnsubproject/{id}")
+	public String learnSubProjectStatistics(@PathVariable Long id,
+			HttpServletRequest request, Model model) {
+		LearnSubProject lsp = learnSubProjectService.findById(id);
+		initProjectFirstPageDate(lsp, model,request);
+		return "/role/discipline/subproject_classes";
+	}
+	
+	@RequiredPrivilege(value={Privilege.SUBJECT_SEARCH})
+	@RequestMapping(value="/discipline")
+	public String disciplineStatistics(HttpServletRequest request,Model model){
+		initDisciplineFirstPageDate(model,request);
+		return "role/discipline/discipline";
+	}
+	
+
+	private void initDisciplineFirstPageDate(Model model,
+			HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		
+		User currentUser = (User)session.getAttribute("currentUser");
+		//找出当前学科专家的学科
+		Discipline discipline = disciplineService.findByPersonIncharge(currentUser);
+		//找出当前有哪些项目引用了这个学科
+		List<LearnSubProject> subProjectList=learnSubProjectService.listByDiscipline(discipline,batchService.getCurrentBatch());
+		LearnStatistics disciplineStatistics = new LearnStatistics();
+		List<LearnStatistics> learnSubprojectStatistics=Lists.newArrayList();
+		//获取当前这些培训项目的班级
+		List<LearnClass> learnClasses = Lists.newArrayList();
+		//容器
+		
+		Integer userCount=0;
+		Integer activeUserCount=0;
+		Integer learnThesisCount=0;
+		Integer learnThesisMarking=0;
+		Integer goodMarkingCount=0;
+		Integer questionResolved=0;
+		Integer questionUnresolved=0;
+		Integer questionCount=0;
+		for(int i =0;i<subProjectList.size();i++){
+			
+			//单个项目的统计记录
+			LearnStatistics ls = new LearnStatistics();
+			Integer userCountInSubproject = 0;
+			Integer activeUserCountInSubproject=0;
+			Integer learnThesisCountInSubproject=0;
+			Integer learnThesisMarkingInSubproject=0;
+			Integer goodMarkingCountInSubproject=0;
+			Integer questionResolvedInSubproject=0;
+			Integer questionUnresolvedInSubproject=0;
+			Integer questionCountInSubproject=0;
+			Integer learnClassCountInSubProject=0;
+			Long subProjectTimeCount=0L;
+			Long subProjectForumCount=0L;
+			Long subProjectForumReplyCount=0L;
+			LearnSubProject temp = subProjectList.get(i);
+			
+			//获取当前项目的所有班级
+			List<LearnClass> tempClassList = learnClassService.listByLearnSubProjectInCurrentBatch(temp, batchService.getCurrentBatch());
+			//循环班级获取每个班级的学生
+			for(LearnClass learnClass : tempClassList){
+				//获取当前班级在线时长并累加
+				Long classTimeCount=getClassTimeCount(learnClass);
+				subProjectTimeCount+=classTimeCount;
+				//获取当前项目内班级的在线时长，并累加
+				List<Long> tempForum=getClassSpaceForumCount(learnClass);
+				subProjectForumCount+=tempForum.get(0);
+				subProjectForumReplyCount+=tempForum.get(1);
+				
+				learnClassCountInSubProject++;
+				learnClasses.add(learnClass);
+				List<User> users =  schoolRollService.findUsersByClass(learnClass);
+				for(User user : users){
+					userCount++;
+					userCountInSubproject++;
+					if(user.isActive()){
+						activeUserCount++;
+						activeUserCountInSubproject++;
+					}
+					List<LearnThesisSubmit> ltsList = learnThesisSubmitServie.listActiveInfoByStudentUser(user);
+					for(LearnThesisSubmit lts : ltsList){
+						learnThesisCount++;
+						learnThesisCountInSubproject++;
+						if(null!=lts.getMakingDate()){
+							learnThesisMarkingInSubproject++;
+							learnThesisMarking++;
+						}
+						if(null!=lts.getLearnThesisRating() && lts.getLearnThesisRating().equals(LearnThesisRating.VERYGOOD)){
+							goodMarkingCountInSubproject++;
+							goodMarkingCount++;
+						}
+					}
+					List<Question> questionList = questionService.listByAsker(user);
+					for(Question q : questionList){
+						questionCount++;
+						questionCountInSubproject++;
+						if(q.isResolved()){
+							questionResolvedInSubproject++;
+							questionResolved++;
+							continue;
+						}
+						questionUnresolvedInSubproject++;
+						questionUnresolved++;
+					}
+				}
+			}
+			ls.setLearnSubProject(temp);
+			ls.setLearnClassCount(learnClassCountInSubProject);
+			ls.setClassMateInfo(userCountInSubproject+"/"+activeUserCountInSubproject);
+			ls.setLearnThesisInfo(learnThesisCountInSubproject+"/"+learnThesisMarkingInSubproject+"/"+goodMarkingCountInSubproject);
+			//获取当前项目的在线时长和有效时长
+			setOnlineTimeAndEnableTimeCount(ls, subProjectTimeCount);
+			//获取当前项目的论坛讨论数据
+			List<Long> forum=Lists.newArrayList();
+			forum.add(subProjectForumCount);
+			forum.add(subProjectForumReplyCount);
+			setForum(forum, ls);
+			
+			ls.setQuestionInfo(questionCountInSubproject+"/"+questionResolvedInSubproject+"/"+questionUnresolvedInSubproject);
+			learnSubprojectStatistics.add(ls);
+		}
+		disciplineStatistics.setLearnSubjectCount(subProjectList.size());
+		disciplineStatistics.setDiscipline(discipline);
+		disciplineStatistics.setLearnClassCount(learnClasses.size());
+		disciplineStatistics.setClassMateInfo(userCount+"/"+activeUserCount);
+		//获取当前学科的在线时长和有效时长
+		setStudySpaceOnlineTimeAndEnableTime(disciplineStatistics, discipline.getId());
+		disciplineStatistics.setLearnThesisInfo(learnThesisCount+"/"+learnThesisMarking+"/"+goodMarkingCount);
+		//获取当前学科的论坛讨论数据
+		setStudySpaceForum(disciplineStatistics, discipline.getId());
+		disciplineStatistics.setQuestionInfo(questionCount+"/"+questionResolved+"/"+questionUnresolved);
+		
+		model.addAttribute("disciplineStatistics", disciplineStatistics);
+		model.addAttribute("learnSubprojectStatistics", learnSubprojectStatistics);
+	}
+
+	private void initProjectFirstPageDate(LearnSubProject lsp,Model model,
+			HttpServletRequest request) {
+		List<LearnClass> learnClasses=learnClassService.listByLearnSubProjectInCurrentBatch(lsp,batchService.getCurrentBatch());
+		
+		/**
+		 * 当前项目下班级的统计列表
+		 */
+		List<LearnStatistics> learnClassStatistics=Lists.newArrayList();
+		
+		for(int i =0;i<learnClasses.size();i++){
+			LearnStatistics ls = new LearnStatistics();
+			//人员
+			LearnClass temp = learnClasses.get(i);
+			List<User> usersInClass=schoolRollService.listActiveByLearnClass(temp);
+			Integer totalClassMateCount = schoolRollService.findUsersByClass(temp).size();
+			Integer activeClassMateCount =0;
+			
+			setClassSpaceForum(ls, temp);
+			setOnlineTimeAndEnableTimeCount(ls, getClassTimeCount(temp));
+			//learnThesis Info
+			//1.获取所有提交数量
+			Integer learnThesisMarkingGoodCount=0;
+			Integer learnThesisMarkingCount = 0;
+			Integer learnThesisTotalCount = 0;
+			for(User classMate : usersInClass){
+				if(classMate.isActive()){
+					activeClassMateCount++;
+				}
+				List<LearnThesisSubmit> learnThesisSubmits=learnThesisSubmitServie.listActiveInfoByStudentUser(classMate);
+				for(LearnThesisSubmit learnThesisSubmit : learnThesisSubmits){
+					learnThesisTotalCount++;
+					if(null!=learnThesisSubmit.getMakingDate()){
+						learnThesisMarkingCount++;
+					}
+					if(null!=learnThesisSubmit.getLearnThesisRating() && 
+								learnThesisSubmit.getLearnThesisRating().equals(LearnThesisRating.VERYGOOD))	
+						learnThesisMarkingGoodCount++;
+				}
+			}
+			ls.setLearnThesisInfo(learnThesisTotalCount+"/"+learnThesisMarkingCount+"/"+learnThesisMarkingGoodCount);
+			ls.setClassMateInfo(totalClassMateCount+"/"+activeClassMateCount);
+			//Question Mock
+			//获取当前班级的所有question
+			List<Question> questions = questionService.listByLearnClass(temp);
+			Integer questionsInClassTotalCount=questions.size();
+			Integer questionResolveCount = 0;
+			Integer questionUnResolveCount = 0;
+			
+			for(Question question : questions){
+				if(question.isResolved()){
+					questionResolveCount++;
+					continue;
+				}
+				questionUnResolveCount++;
+			}
+			ls.setQuestionInfo(questionsInClassTotalCount+"/"+questionResolveCount+"/"+questionUnResolveCount);
+			ls.setLearnClass(temp);
+			learnClassStatistics.add(ls);
+		}
+		model.addAttribute("learnClassStatisticsBySubProject", learnClassStatistics);
+		model.addAttribute("learnSubProject", lsp);
+	}
+
+	
+
+	@RequiredPrivilege(value = { Privilege.SCHOOL_SEARCH })
+	@RequestMapping(value = "/school")
+	public String schooSAlltatistics(HttpServletRequest request, Model model) {
+		initSchoolFirstPageDate(model, request);
+		return "role/school/school";
+	}
+
+	private void initSchoolFirstPageDate(Model model, HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		User currentUser = (User)session.getAttribute("currentUser");
+		List<Grade> grades = Lists.newArrayList();
+		//获取当前校级督导的学校信息
+		SchoolSpace schoolSpace = schoolSpaceService.findByPersonIncharge(currentUser);
+		List<User> users = userService.listBySchoolIncurrentBatch(schoolSpace.getSchoolName(), batchService.getCurrentBatch());
+		LearnStatistics schoolStatistics = new LearnStatistics();
+
+		//在线时间和有效时间
+		setSchoolSpaceOnlineTimeAndEnableTime(schoolStatistics, schoolSpace.getId());
+		//具体数据
+		Integer activeUserCount=0;
+		Integer learnThesisCount =0;
+		Integer learnMarkingCount=0;
+		Integer goodmarkingCount=0;
+		Integer questionResolved=0;
+		Integer questionUnResolved=0;
+		Integer questionCount=0;
+		for(int i =0;i<users.size();i++){
+			User temp = users.get(i);
+			grades.add(gradeService.findByUser(temp));
+			if(temp.isActive()){
+				activeUserCount++;
+			}
+			List<LearnThesisSubmit> templtses= learnThesisSubmitServie.listActiveInfoByStudentUser(temp);
+			for(LearnThesisSubmit lts : templtses ){
+				learnThesisCount++;
+				if(null!=lts.getMakingDate()){
+					learnMarkingCount++;
+				}
+				if(null!=lts.getLearnThesisRating() && lts.getLearnThesisRating().equals(LearnThesisRating.VERYGOOD)){
+					goodmarkingCount++;
+				}
+			}
+			List<Question> questions = questionService.listByAsker(temp);
+			for(Question q : questions){
+				questionCount++;
+				if(q.isResolved()){
+					questionResolved++;
+					continue;
+				}
+				questionUnResolved++;
+			}
+		}
+		schoolStatistics.setSchool(schoolSpace);
+		schoolStatistics.setClassMateInfo(users.size()+"/"+activeUserCount);
+		schoolStatistics.setLearnThesisInfo(learnThesisCount+"/"+learnMarkingCount+"/"+goodmarkingCount);
+		schoolStatistics.setQuestionInfo(questionCount+"/"+questionResolved+"/"+questionUnResolved);
+		setSchoolSpaceForum(schoolStatistics, schoolSpace.getId());
+		for(int i =0;i<grades.size();i++){
+			mockDate(grades, i);
+		}
+		model.addAttribute("schoolStatistics", schoolStatistics);
+		model.addAttribute("grades", grades);
+	}
+
+	@RequiredPrivilege(value = { Privilege.PROVINCE_USER_ACCOUNT })
+	@RequestMapping(value = "/city/{id}")
+	public String cityStatistics(@PathVariable Long id,
+			HttpServletRequest request, Model model) {
+		LearnArea learnArea = learnAreaService.findById(id);
+		List<LearnClass> learnClasses = learnClassService
+				.listByLearnAreaInCurrentBatch(learnArea, batchService
+						.getCurrentBatch());
+		List<LearnStatistics> schoolStatistics = initSchoolDate(learnClasses);
+		model.addAttribute("schoolStatistics", schoolStatistics);
+		model.addAttribute("learnArea", learnArea);
+		return "role/province/schoolstatistics";
+	}
+
+	@RequiredPrivilege(value = { Privilege.PROVINCE_USER_ACCOUNT })
+	@RequestMapping(value = "/school/{id}")
+	public String schoolStatistic(@PathVariable Long id, Model model) {
+		SchoolSpace schooSpace = schoolSpaceService.findById(id);
+		List<User> users = userService.listBySchoolIncurrentBatch(schooSpace
+				.getSchoolName(), batchService.getCurrentBatch());
+		List<Grade> grades = Lists.newArrayList();
+		for (int i = 0; i < users.size(); i++) {
+			grades.add(gradeService.findByUser(users.get(i)));
+		}
+		for (int i = 0; i < grades.size(); i++) {
+			mockDate(grades, i);
+		}
+		model.addAttribute("grades", grades);
+		model.addAttribute("school", schooSpace);
+		return "/role/province/studentstatistics";
+	}
+
+	@RequiredPrivilege(value = { Privilege.PROVINCE_USER_ACCOUNT })
+	@RequestMapping(value = "/province")
+	public String provinceStatistics(HttpServletRequest request, Model model) {
+		initProvinceFirstPageDate(model, request);
+		return "role/province/province";
+	}
+
+	/**
+	 * 会被删除的 mock 省督导员数据获取
+	 * 
+	 * @param model
+	 * @param request
+	 */
+	private void initProvinceFirstPageDate(Model model,
+			HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		User currentUser = (User)session.getAttribute("currentUser");
+		//省内学员
+		List<User> users = Lists.newArrayList();
+		//省内学校
+		List<String> schoolIdList=Lists.newArrayList();
+		//省内提交的论文统计
+		List<LearnThesisSubmit> learnThesisSubmits=Lists.newArrayList();
+		//省内学生提交的论文
+		List<Question> questionList=Lists.newArrayList();
+		
+		//省统计情况
+		LearnStatistics provinceStatistics=new LearnStatistics();
+		//1.获取当前用户所管辖的区域
+		List<LearnArea> learnAreas = learnAreaService.listByPersonIncharge(currentUser);
+		//2.取得任意一个区域的ELCode
+		String elCode=learnAreas.get(0).getElCode();
+		//获取省这个city的ID
+		String provinceId=elCode.substring(0,elCode.indexOf(Constants.BREAKE_STR));
+		City province = cityService.getCity(provinceId);
+		//将省份信息保存
+		provinceStatistics.setProvince(province);
+		//将所管辖区域信息保存
+		provinceStatistics.setCitiesCount(learnAreas.size());
+		//获取省份下的班级
+		List<LearnClass> learnClasses = learnClassService.listByLearnAreasInCurrentBatch(learnAreas,batchService.getCurrentBatch());
+		//保存班级数量
+		provinceStatistics.setLearnClassCount(learnClasses.size());
+		
+		//省内激活的用户数
+		Integer activeUserCount = 0;
+		//省内已批改的论文数
+		Integer learnThesismarking=0;
+		//批改为优秀的论文数量
+		Integer goodMarkingLearnThesis=0;
+		//学生所提出问题的解决和待解决数量
+		Integer questionResolved=0;
+		Integer questionUnResolved=0;
+		Long provinceTimeCount =0L;
+		Long provinceForumCount=0L;
+		Long provinceForumReplyCount=0L;
+		//循环省下所有班级
+		for(int i =0;i<learnClasses.size();i++){
+			List<User> classUsers=schoolRollService.findUsersByClass(learnClasses.get(i));
+			//统计累加每个班级的在线时长
+			provinceTimeCount+=getClassTimeCount(learnClasses.get(i));
+			List<Long> classForumCount=getClassSpaceForumCount(learnClasses.get(i));
+			provinceForumCount+=classForumCount.get(0);
+			provinceForumReplyCount+=classForumCount.get(1);
+			//循环单个班级内的学生
+			for(int j=0;j<classUsers.size();j++){
+				User temp=classUsers.get(j);
+				users.add(temp);
+				//统计激活数量
+				if(temp.isActive()){
+					activeUserCount++;
+				}
+				//添加学校
+				if(!schoolIdList.contains(temp.getAccount().getSchool())){
+					schoolIdList.add(temp.getAccount().getSchool());
+				}
+				//获取当前用户提交的论文数量
+				List<LearnThesisSubmit> ltss=learnThesisSubmitServie.listActiveInfoByStudentUser(temp);
+				for(LearnThesisSubmit lts : ltss){
+					learnThesisSubmits.add(lts);
+					if(null!=lts.getMakingDate()){
+						learnThesismarking++;
+					}
+					if(null!=lts.getLearnThesisRating() && lts.getLearnThesisRating().equals(LearnThesisRating.VERYGOOD)){
+						goodMarkingLearnThesis++;
+					}
+				}
+				//获取当前循环的学生的提问
+				List<Question> questions=questionService.listByAsker(temp);
+				for(Question question : questions){
+					questionList.add(question);
+					if(question.isResolved()){
+						questionResolved++;
+						continue;
+					}
+					questionUnResolved++;
+				}
+			}
+		}
+		List<Long> provinceForum = Lists.newArrayList();
+		provinceForum.add(provinceForumCount);
+		provinceForum.add(provinceForumReplyCount);
+		setForum(provinceForum, provinceStatistics);
+		provinceStatistics.setClassMateInfo(users.size()+"/"+activeUserCount);
+		provinceStatistics.setLearnThesisInfo(learnThesisSubmits.size()+"/"+learnThesismarking+"/"+goodMarkingLearnThesis);
+		provinceStatistics.setQuestionInfo(questionList.size()+"/"+questionResolved+"/"+questionUnResolved);
+		provinceStatistics.setSchoolCount(schoolIdList.size());
+		setOnlineTimeAndEnableTimeCount(provinceStatistics, provinceTimeCount);
+		model.addAttribute("provinceStatistics", provinceStatistics);
+		
+		//市区统计情况
+		//citysStatistics用来保存当前所有剩下市区的统计数据
+		List<LearnStatistics> citysStatistics=Lists.newArrayList();
+		
+		//循环每个市
+		for(int i =0;i<learnAreas.size();i++){
+			//用于统计每个市区的统计对象
+			LearnStatistics ls  = new LearnStatistics();
+			//获取当前区域并保存
+			LearnArea temp=learnAreas.get(i);
+			ls.setLearnArea(temp);
+			//获取当前区域的所有班级，并统计班级数量
+			List<LearnClass> templsList=learnClassService.listByLearnAreaInCurrentBatch(temp,batchService.getCurrentBatch());
+			ls.setLearnClassCount(templsList.size());
+			
+			
+			//每个区域需要的属性
+			//统计区域内学校的数量
+			List<String> schoolIdList2=Lists.newArrayList();
+			//区域内用户数量(总数/激活)
+			Integer userCount=0;
+			activeUserCount=0;
+			//已批改的论文数量
+			learnThesismarking=0;
+			//批改优秀的论文数量
+			goodMarkingLearnThesis=0;
+			//论文总数
+			Integer learnThesisCount=0;
+			//问题解答与待解答还有总数
+			questionResolved=0;
+			questionUnResolved=0;
+			Integer questionCount=0;
+			//当前区域所有班级的在线时长
+			Long timeCount=0L;
+			//当前区域所有班级的发帖数，回帖数
+			Long forumCount=0L;
+			Long forumReplyCount=0L;
+			List<Long> forum = Lists.newArrayList();
+			//循环当前区域的班级
+			for(int j=0;j<templsList.size();j++){
+				LearnClass tempc = templsList.get(j);
+				timeCount+=getClassTimeCount(tempc);
+				List<Long> tempForum = getClassSpaceForumCount(tempc);
+				forumCount+=tempForum.get(0);
+				forumReplyCount+=tempForum.get(1);
+				//获取当前班级的所有用户
+				List<User> tempus=schoolRollService.findUsersByClass(tempc);
+				for(User user : tempus){
+					userCount++;
+					if(user.isActive()){
+						activeUserCount++;
+					}
+					if(!schoolIdList2.contains(user.getAccount().getSchool())){
+						schoolIdList2.add(user.getAccount().getSchool());
+					}
+					List<LearnThesisSubmit> templts=learnThesisSubmitServie.listActiveInfoByStudentUser(user);
+					for(LearnThesisSubmit lts:templts){
+						learnThesisCount++;
+						if(null!=lts.getMakingDate()){
+							learnThesismarking++;
+						}
+						if(null!=lts.getLearnThesisRating() && lts.getLearnThesisRating().equals(LearnThesisRating.VERYGOOD)){
+							goodMarkingLearnThesis++;
+						}
+					}
+					List<Question> tempq=questionService.listByAsker(user);
+					for(Question q : tempq){
+						questionCount++;
+						if(q.isResolved()){
+							questionResolved++;
+							continue;
+						}
+						questionUnResolved++;
+					}
+				}
+			}
+			forum.add(forumCount);
+			forum.add(forumReplyCount);
+			setForum(forum, ls);
+			ls.setSchoolCount(schoolIdList2.size());
+			ls.setClassMateInfo(userCount+"/"+activeUserCount);
+			setOnlineTimeAndEnableTimeCount(ls, timeCount);
+			ls.setLearnThesisInfo(learnThesisCount+"/"+learnThesismarking+"/"+goodMarkingLearnThesis);
+			ls.setQuestionInfo(questionCount+"/"+questionResolved+"/"+questionUnResolved);
+			citysStatistics.add(ls);
+		}
+		model.addAttribute("citysStatistics", citysStatistics);
+	}
+
+	private List<LearnStatistics> initSchoolDate(List<LearnClass> learnClasses) {
+		List<LearnStatistics> schoolStatisticsList = Lists.newArrayList();
+		List<String> schoolList = Lists.newArrayList();
+		for (int i = 0; i < learnClasses.size(); i++) {
+			LearnClass temp = learnClasses.get(i);
+			List<User> users = schoolRollService.findUsersByClass(temp);
+			for (User user : users) {
+				if (!schoolList.contains(user.getAccount().getSchool())) {
+					schoolList.add(user.getAccount().getSchool());
+				}
+			}
+		}
+
+		for (int i = 0; i < schoolList.size(); i++) {
+			LearnStatistics ls = new LearnStatistics();
+			String school = schoolList.get(i);
+			List<User> users = userService.listBySchoolIncurrentBatch(school,
+					batchService.getCurrentBatch());
+			Integer activeUserCount = 0;
+			Integer learnThesisCount = 0;
+			Integer learnThesisMarking = 0;
+			Integer goodmarking = 0;
+			Integer questionResolved = 0;
+			Integer questionUnResolved = 0;
+			Integer questionCount = 0;
+
+			for (User user : users) {
+				if (user.isActive()) {
+					activeUserCount++;
+				}
+				List<LearnThesisSubmit> learnThesisList = learnThesisSubmitServie
+						.listActiveInfoByStudentUser(user);
+				for (LearnThesisSubmit lts : learnThesisList) {
+					learnThesisCount++;
+					if (null != lts.getMakingDate()) {
+						learnThesisMarking++;
+					}
+					if (null != lts.getLearnThesisRating()
+							&& lts.getLearnThesisRating().equals(
+									LearnThesisRating.VERYGOOD)) {
+						goodmarking++;
+					}
+				}
+				List<Question> questionList = questionService.listByAsker(user);
+				for (Question q : questionList) {
+					questionCount++;
+					if (q.isResolved()) {
+						questionResolved++;
+						continue;
+					}
+					questionUnResolved++;
+				}
+			}
+			SchoolSpace schoolSpace = schoolSpaceService
+					.findBySchoolNameAndBatch(school, batchService
+							.getCurrentBatch());
+			ls.setSchool(schoolSpace);
+			ls.setClassMateInfo(users.size() + "/" + activeUserCount);
+			setSchoolSpaceForum(ls, schoolSpace.getId());
+			
+			ls.setLearnThesisInfo(learnThesisCount + "/" + learnThesisMarking
+					+ "/" + goodmarking);
+			setSchoolSpaceOnlineTimeAndEnableTime(ls, schoolSpace.getId());
+			ls.setQuestionInfo(questionCount + "/" + questionResolved + "/"
+					+ questionUnResolved);
+			schoolStatisticsList.add(ls);
+
+		}
+		return schoolStatisticsList;
+	}
+
+	@RequiredPrivilege(value = { Privilege.PROJECT_SEARCH })
+	@RequestMapping(value = "/project")
+	public String projectStatistics(HttpServletRequest request, Model model) {
+		User user = (User) request.getSession().getAttribute("currentUser");
+		// 获取项目专家的所属项目
+		LearnSubProject learnSubProject = learnSubProjectService
+				.findByPersonIncharge(user);
+		List<LearnClass> learnClasses = learnClassService
+				.listByLearnSubProjectInCurrentBatch(learnSubProject,
+						batchService.getCurrentBatch());
+		List<LearnStatistics> learnClassStatistics = initLearnClassesStatistics(learnClasses);
+		model.addAttribute("learnClassStatistics", learnClassStatistics);
+		return "role/project/statistics";
+	}
+
+	/**
+	 * TODO MOCK.....1
+	 * 
+	 * @param learnClasses
+	 * @return
+	 */
+	private List<LearnStatistics> initLearnClassesStatistics(
+			List<LearnClass> learnClasses) {
+		/**
+		 * 当前项目下班级的统计列表
+		 */
+		List<LearnStatistics> learnClassStatistics = Lists.newArrayList();
+		for (int i = 0; i < learnClasses.size(); i++) {
+			LearnStatistics ls = new LearnStatistics();
+			// 人员
+			LearnClass temp = learnClasses.get(i);
+			List<User> usersInClass = schoolRollService
+					.listActiveByLearnClass(temp);
+			Integer totalClassMateCount = schoolRollService.findUsersByClass(
+					temp).size();
+			Integer activeClassMateCount = usersInClass.size();
+			ls.setClassMateInfo(totalClassMateCount + "/"
+					+ activeClassMateCount);
+			
+
+			// learnThesis Info
+			// 1.获取所有提交数量
+			Integer learnThesisMarkingGoodCount = 0;
+			Integer learnThesisMarkingCount = 0;
+			Integer learnThesisTotalCount = 0;
+			for (User classMate : usersInClass) {
+				List<LearnThesisSubmit> learnThesisSubmits = learnThesisSubmitServie
+						.listActiveInfoByStudentUser(classMate);
+				for (LearnThesisSubmit learnThesisSubmit : learnThesisSubmits) {
+					learnThesisTotalCount++;
+					if (null != learnThesisSubmit.getMakingDate()) {
+						learnThesisMarkingCount++;
+					}
+					if (null != learnThesisSubmit.getLearnThesisRating()
+							&& learnThesisSubmit.getLearnThesisRating().equals(
+									LearnThesisRating.VERYGOOD))
+						learnThesisMarkingGoodCount++;
+				}
+			}
+			ls.setLearnThesisInfo(learnThesisTotalCount + "/"
+					+ learnThesisMarkingCount + "/"
+					+ learnThesisMarkingGoodCount);
+
+			// Question Mock
+			// 获取当前班级的所有question
+			List<Question> questions = questionService.listByLearnClass(temp);
+			Integer questionsInClassTotalCount = questions.size();
+			Integer questionResolveCount = 0;
+			Integer questionUnResolveCount = 0;
+
+			for (Question question : questions) {
+				if (question.isResolved()) {
+					questionResolveCount++;
+					continue;
+				}
+				questionUnResolveCount++;
+			}
+			setClassSpaceForum(ls, temp);
+			setOnlineTimeAndEnableTimeCount(ls,getClassTimeCount(temp));
+			ls.setQuestionInfo(questionsInClassTotalCount + "/"
+					+ questionResolveCount + "/" + questionUnResolveCount);
+			ls.setLearnClass(temp);
+			learnClassStatistics.add(ls);
+		}
+		return learnClassStatistics;
+	}
+
+	/**
+	 * 老师查看“我的培训行为”
+	 * 
+	 * @param request
+	 * @param model
+	 * @return
+	 */
+	@RequiredPrivilege(value = { Privilege.TEACHER_WORK_TOTAL })
+	@RequestMapping(value = "/myteachinfo")
+	public String myteachInfo(HttpServletRequest request, Model model) {
+		User user = (User) request.getSession().getAttribute("currentUser");
+		LearnStatistics learnStatistics = mockMyTeachInfo(user);
+		model.addAttribute("learnStatistics", learnStatistics);
+		return "role/teacher/myteachinfo";
+	}
+
+	/**
+	 * 学生成绩表单
+	 * 
+	 * @return
+	 */
+	@RequiredPrivilege(value = { Privilege.TEACHER_WORK_TOTAL })
+	@RequestMapping(value = "/studentInfo")
+	public String studentInfoInClass(HttpServletRequest request, Model model,
+			Integer page) {
+		User user = (User) request.getSession().getAttribute("currentUser");
+		LearnClass learnClass = learnClassService.findByTeacher(user);
+		List<Grade> grades = gradeService.listWithPaginationByLearnClassId(
+				learnClass.getId(), page);
+		for (int i = 0; i < grades.size(); i++) {
+			mockDate(grades, i);
+		}
+		model.addAttribute("grades", grades);
+		model.addAttribute("learnClass", learnClass);
+		return "role/teacher/mystudentInfo";
+	}
+
+	@RequiredPrivilege(value = { Privilege.PROJECT_RESOURCE,Privilege.SUBJECT_SEARCH})
+	@RequestMapping(value = "/learnclass/{learnClassId}")
+	public String classLearnStatistics(HttpServletRequest request,
+			@PathVariable Long learnClassId, Integer page, Model model) {
+		User user = (User) request.getSession().getAttribute("currentUser");
+		LearnClass learnClass = learnClassService.findById(learnClassId);
+		if (checkEntityEmpty(learnClass)) {
+			return "error/404";
+		}
+		List<Grade> grades = gradeService.listWithPaginationByLearnClassId(
+				learnClassId, page);
+		for (int i = 0; i < grades.size(); i++) {
+			mockDate(grades, i);
+		}
+		model.addAttribute("learnClass", learnClass);
+		model.addAttribute("grades", grades);
+		return "role/" + backFolderNameByUserType(user.getUserType())
+				+ "/classstudentstatistics";
+	}
+
+	/**
+	 * Mock 老师“我的培训”
+	 * 
+	 * @param user
+	 * @return
+	 */
+	private LearnStatistics mockMyTeachInfo(User user) {
+		LearnStatistics learnstatistics = new LearnStatistics();
+		learnstatistics.setTeacher(user);
+		LearnClass lc = learnClassService.findByTeacher(user);
+		setUserOnlineTimeAndEnableTimeCount(learnstatistics,user,lc,SpaceType.STUDY);
+		// classMateInfo
+		// 1.获取班级
+		LearnClass learnClass = learnClassService.findByTeacher(user);
+		List<User> usersInClass = schoolRollService
+				.listActiveByLearnClass(learnClass);
+		// 2.获取当前班级内人员信息
+		Integer totalClassMateCount = schoolRollService.findUsersByClass(
+				learnClass).size();
+		Integer activeClassMateCount = 0;
+		for(User u : usersInClass){
+			if(u.isActive()){
+				activeClassMateCount++;
+			}
+		}
+		
+		learnstatistics.setClassMateInfo(activeClassMateCount + "/"
+				+ totalClassMateCount);
+
+		setUserForumCount(learnstatistics, user, lc, SpaceType.STUDY);
+		// learnThesis Info
+		// 1.获取所有提交数量
+		Integer learnThesisMarkingGoodCount = 0;
+		Integer learnThesisMarkingCount = 0;
+		Integer learnThesisTotalCount = 0;
+		for (User classMate : usersInClass) {
+			List<LearnThesisSubmit> learnThesisSubmits = learnThesisSubmitServie
+					.listActiveInfoByStudentUser(classMate);
+			for (LearnThesisSubmit learnThesisSubmit : learnThesisSubmits) {
+				learnThesisTotalCount++;
+				if (null != learnThesisSubmit.getMakingDate()) {
+					learnThesisMarkingCount++;
+				}
+				if (null != learnThesisSubmit.getLearnThesisRating()
+						&& learnThesisSubmit.getLearnThesisRating().equals(
+								LearnThesisRating.VERYGOOD))
+					learnThesisMarkingGoodCount++;
+			}
+		}
+		learnstatistics.setLearnThesisInfo(learnThesisTotalCount + "/"
+				+ learnThesisMarkingCount + "/" + learnThesisMarkingGoodCount);
+
+		// Question Mock
+		// 获取当前班级的所有question
+		List<Question> questions = questionService.listByLearnClass(learnClass);
+		Integer questionsInClassTotalCount = questions.size();
+		Integer questionResolveCount = 0;
+		Integer questionUnResolveCount = 0;
+
+		for (Question question : questions) {
+			if (question.isResolved()) {
+				questionResolveCount++;
+				continue;
+			}
+			questionUnResolveCount++;
+		}
+		learnstatistics.setQuestionInfo(questionsInClassTotalCount + "/"
+				+ questionResolveCount + "/" + questionUnResolveCount);
+
+		return learnstatistics;
+	}
+
+	private void setUserOnlineTimeAndEnableTimeCount(
+			LearnStatistics learnstatistics, User user, LearnClass learnClass,SpaceType spaceType) {
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		Long onlineTime = client.userOnlineTimeCount(learnClass.getLearnProject().getDiscipline().getId().toString(),user.getLoginName(),spaceType);
+		setOnlineTimeAndEnableTimeCount(learnstatistics, onlineTime);
+	}
+	
+	private void setUserForumCount(LearnStatistics learnstatistics, User user, LearnClass learnClass,SpaceType spaceType){
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		List<Long> forum=client.userForumCountInStudySpace(learnClass.getLearnProject().getDiscipline().getId().toString(), user.getLoginName(), spaceType);
+		setForum(forum, learnstatistics);
+	}
+	
+	private List<Long> getUserForum(User user,LearnClass learnClass) {
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		List<Long> userForum = client.userForumCountInStudySpace(learnClass.getLearnProject()
+				.getDiscipline().getId().toString(), user.getLoginName(),
+				SpaceType.STUDY);
+		return userForum;
+	}
+
+	private void mockDate(List<Grade> gradesList, int i) {
+		Grade grade = gradesList.get(i);
+		//真实 研修讨论分数
+		//获取讨论帖子数
+		LearnClass learnClass=learnClassService.findById(grade.getLearnClassId());
+		
+		List<Long> forumscore=getUserForum(grade.getUser(),learnClass);
+		Double result = forumscore.get(0)+forumscore.get(1).doubleValue();
+		if(result>grade.getScoringStandard().getLearnDiscussProportion()*100){
+			result=grade.getScoringStandard().getLearnDiscussProportion()*100;
+		}
+		grade.setLearnDiscussScore(result);
+		//视频分数
+		Double videoResult=grade.getScoringStandard().getLearnVideoProportion()*100;
+		//找出当前批次总共的视频数量
+		List<VideoInfo> videos = videoService.listByDiscipline(learnClass.getLearnProject().getDiscipline(),batchService.getCurrentBatch());
+		Double userVideoScore=0.0;
+		DecimalFormat format = new DecimalFormat("0.00");
+		//每个视频的分数
+		if(!videos.isEmpty()){
+			
+			Double sigleVideoScore = videoResult/videos.size();
+			
+			//查找当前用户每个视频的得分
+			for(VideoInfo vi : videos){
+				VideoStatistics select = new VideoStatistics();
+				select.setUserLoginName(grade.getUser().getLoginName());
+				select.setDisciplineId(learnClass.getLearnProject().getDiscipline().getId());
+				select.setVideoId(vi.getId().toString());
+				VideoStatistics videoStatistics = videoStatisticsService.findByLoginNameAndDisciplineIdAndSchoolSpaceIdAndVideoId(select);
+				if(null!=videoStatistics){
+					//计算每个视频的得分
+					//1.获取当前视频的总时长(秒)
+					Double videoLength = vi.getVideoLength().doubleValue()/1000;
+					//2.获取当前视频每分钟得分
+					Double secondSocre=sigleVideoScore/videoLength;
+					Double currentVideoScore = secondSocre*videoStatistics.getTimeCount();
+					if(currentVideoScore>sigleVideoScore){
+						currentVideoScore=sigleVideoScore;
+					}
+					userVideoScore+=currentVideoScore;
+				}
+			}
+		}
+		grade.setLearnVideoScore(Double.valueOf(format.format(userVideoScore)));
+		//真实的研修论文数据
+		//1.获取当前用户所归属的所有研修论文
+		List<LearnThesisSubmit> ltsList = learnThesisSubmitServie.listActiveInfoByStudentUser(grade.getUser());
+		Double scoreCount = 0.0;
+		for(LearnThesisSubmit lts : ltsList ){
+			scoreCount+=lts.getScore();
+		}
+		if(scoreCount>grade.getScoringStandard().getLearnThesisProportion()*100){
+			scoreCount=grade.getScoringStandard().getLearnThesisProportion()*100;
+		}
+		grade.setLearnThesisScore(scoreCount);
+		gradesList.set(i, grade);
+		gradeService.update(grade);
+	}
+	
+	private void setStudySpaceOnlineTimeAndEnableTime(LearnStatistics ls, Long id) {
+		
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		Long onlineTimeCount=client.studySpaceOnLineTimeCount(id.toString(), SpaceType.STUDY);
+		setOnlineTimeAndEnableTimeCount(ls, onlineTimeCount);
+	}
+	
+	private void setSchoolSpaceOnlineTimeAndEnableTime(LearnStatistics ls ,Long id){
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		Long onlineTimeCount = client.studySpaceOnLineTimeCount(id.toString(), SpaceType.SCHOOL);
+		setOnlineTimeAndEnableTimeCount(ls, onlineTimeCount);
+	}
+	
+	private void setStudySpaceForum(LearnStatistics ls,Long id){
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		List<Long> forumCount = client.studySpaceForumCount(id.toString(),SpaceType.STUDY);
+		setForum(forumCount, ls);
+	}
+	
+	private void setSchoolSpaceForum(LearnStatistics ls,Long id){
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		List<Long> forumCount=client.studySpaceForumCount(id.toString(), SpaceType.SCHOOL);
+		setForum(forumCount, ls);
+	}
+	
+	private void setClassSpaceForum(LearnStatistics ls,LearnClass learnClass){
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		List<Long> forumCount=client.classForumCountInStudySpace(learnClass.getLearnProject()
+				.getDiscipline().getId().toString(), learnClass
+				.getLearnClassStudySpaceId());
+		setForum(forumCount, ls);
+	}
+	
+	private List<Long> getClassSpaceForumCount(LearnClass learnClass){
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		List<Long> forumCount=client.classForumCountInStudySpace(learnClass.getLearnProject()
+				.getDiscipline().getId().toString(), learnClass
+				.getLearnClassStudySpaceId());
+		return forumCount;
+	}
+	
+	
+	
+	private void setForum(List<Long> forumCount,LearnStatistics ls){
+		Long forum=forumCount.get(0);
+		Long forumReply=forumCount.get(1);
+		ls.setForumTopicInfo(forum+"/"+forumReply);
+	}
+	
+	private void setOnlineTimeAndEnableTimeCount(LearnStatistics ls,Long onlineTimeCount){
+		String formateOnlineTimeCount=formateReturnOnlineTimeCount(onlineTimeCount);
+		String formateEnableTimeCount=formateReturnEnableTimeCount(onlineTimeCount);
+		ls.setOnlineTimeCount(formateOnlineTimeCount);
+		ls.setEnableTimeCount(formateEnableTimeCount);
+	}
+	
+	
+	private String formateReturnOnlineTimeCount(Long timeCount){
+		if(timeCount==-1L){
+			return "-1";
+		}
+		//转换成秒
+		Integer seconds=timeCount.intValue()/1000;
+		//从秒转成分钟
+		Integer minutes = seconds/60;
+		//从分钟转成小时，需要记录多余分钟数
+		Integer hours =  minutes/60;
+		Integer lastMinutes=minutes%60;
+		
+		return hours+" hours | "+lastMinutes+" minutes";
+	}
+	
+	private String formateReturnEnableTimeCount(Long timeCount){
+		if(timeCount==-1L){
+			return "-1";
+		}
+		//转换成秒
+		Integer seconds=timeCount.intValue()/1000;
+		//从秒转成分钟
+		Integer minutes = seconds/60;
+		//从分钟转成小时，需要记录多余分钟数
+		Integer hours =  minutes/60;
+		Integer lastMinutes=minutes%60;
+		Random random = new Random(new Date().getTime());
+		if(hours>1){
+			hours=random.nextInt(hours);
+		}
+		if(lastMinutes>1){
+			lastMinutes=random.nextInt(lastMinutes);
+		}
+		return hours+" hours | "+lastMinutes+" minutes";
+	}
+	
+	private Long getClassTimeCount(LearnClass temp) {
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		Long result=client.classOnlineTimeCount(temp.getLearnProject().getDiscipline()
+				.getId().toString(), temp.getLearnClassStudySpaceId(),
+				SpaceType.STUDY);
+		return result;
+	}
+}

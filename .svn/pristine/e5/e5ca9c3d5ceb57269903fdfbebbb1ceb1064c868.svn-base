@@ -1,0 +1,15 @@
+package com.boventech.gplearn.dao;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.SenderNotification;
+import com.boventech.gplearn.entity.User;
+
+public interface SenderNotificationDao extends
+		BaseDao<SenderNotification, Long> {
+	List<SenderNotification> listAllNotificationByUser(User user, Integer page);
+
+	void delete(User user);
+
+	List<SenderNotification> listAll();
+}

@@ -1,0 +1,34 @@
+package com.boventech.gplearn.dao;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.LearnThesis;
+import com.boventech.gplearn.entity.LearnThesisSubmit;
+import com.boventech.gplearn.entity.User;
+
+public interface LearnThesisSubmitInformationDao extends BaseDao<LearnThesisSubmit, Long> {
+
+	LearnThesisSubmit findByStudentUserAndLearnThesis(User currentStudent, LearnThesis learnThesis);
+
+	List<LearnThesisSubmit> listActiveInfoByStudentUser(User currentStudent);
+
+	List<LearnThesisSubmit> listActiveInfoByTeacherUser(User currentTeacher, Integer page);
+
+	List<LearnThesisSubmit> listByStudent(User student, Integer page);
+
+	List<LearnThesisSubmit> listActiveInfoByTeacherUser(User currentTeacher);
+
+	List<LearnThesisSubmit> listNewestByLearnThesis(LearnThesis learnThesis);
+
+	void delete(User user);
+
+	List<LearnThesisSubmit> listByLearnClassId(Long id);
+
+	Integer getLearnThesisSubmitCount();
+
+	Integer getLearnThesisSubmitGoodCount();
+
+	Integer getCountByLearnClassId(Long id);
+
+	
+}

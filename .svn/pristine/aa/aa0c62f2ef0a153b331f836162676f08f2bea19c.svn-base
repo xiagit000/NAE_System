@@ -1,0 +1,234 @@
+package com.boventech.gplearn.controller;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.Discipline;
+import com.boventech.gplearn.entity.Discipline.LearnRange;
+import com.boventech.gplearn.entity.LearnLevel;
+import com.boventech.gplearn.entity.LearnSpeacialty;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.exception.StudySpaceCreateFaildException;
+import com.boventech.gplearn.service.DisciplineService;
+import com.boventech.gplearn.service.LearnLevelService;
+import com.boventech.gplearn.service.LearnSpeacialtyService;
+
+@Controller
+@RequestMapping(value = "/discipline")
+public class DisciplineController extends ApplicationController {
+
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(DisciplineController.class);
+	
+	@Autowired
+	private DisciplineService disciplineService;
+
+	@Autowired
+	private LearnLevelService learnLevelService;
+
+	@Autowired
+	private LearnSpeacialtyService learnSpeacialtyService;
+
+	/**
+	 * List
+	 * 
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.SYSTEM_DISCIPLINE})
+	@RequestMapping(method = RequestMethod.GET)
+	public String index(Model model, Integer page,HttpServletRequest request) {
+		setSiteBarActive("jc", "discipline", request);
+		List<Discipline> list = disciplineService.listWithPagination(page);
+		model.addAttribute("list", list);
+		return "discipline/index";
+	}
+
+	/**
+	 *Jump to the Edit Page
+	 * 
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.SYSTEM_DISCIPLINE})
+	@RequestMapping(value = "/{id}/update")
+	public String edit(@PathVariable Long id, RedirectAttributes redirectAttrs,
+			Model model) {
+		Discipline discipline = disciplineService.findById(id);
+		if (null == discipline) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttrs,
+					"common.obj.notfound", "id:" + id);
+			return "redirect:/discipline";
+		}
+		initSelectData(model);
+		model.addAttribute("discipline", discipline);
+		return "discipline/update";
+	}
+
+	/**
+	 * UPADATE Discipline
+	 * 
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.SYSTEM_DISCIPLINE})
+	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+	public String update(Discipline discipline, Model model,
+			RedirectAttributes redirectAttr, Long learnSpeacialtyId,
+			Long learnLevelId) {
+		if (null == learnLevelId || null == learnSpeacialtyId) {
+			initSelectData(model);
+			model.addAttribute("discipline", discipline);
+			sendErrorMessage(model, "select.value.null");
+			return "discipline/update";
+		}
+		discipline.setLearnLevel(learnLevelService.findById(learnLevelId));
+		discipline.setLearnSpeacialty(learnSpeacialtyService
+				.findById(learnSpeacialtyId));
+
+		if (disciplineService.checkExsitCodeWithOutCurrent(discipline,
+				discipline.getCode())) {
+			initSelectData(model);
+			model.addAttribute("discipline", discipline);
+			sendErrorMessage(model, "discipline.code.exsit");
+			return "discipline/update";
+		}
+
+		if (disciplineService
+				.checkExsitBylearnSpeacialtyIdAndLearnLevelIdWithoutCurrent(discipline)) {
+			sendErrorMessageWithParameter(model, "common.name.exsit",
+					discipline.getLearnLevel().getName()
+							+ discipline.getLearnSpeacialty().getName());
+			model.addAttribute("discipline", discipline);
+			return "discipline/update";
+		}
+
+		disciplineService.update(discipline);
+		sendNoticeWhenRedirect(redirectAttr, "common.update.success");
+		return "redirect:/discipline";
+	}
+
+	/**
+	 * Jump to the create Page
+	 * 
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.SYSTEM_DISCIPLINE})
+	@RequestMapping(value = "/create")
+	public String create(Model model, RedirectAttributes redirectAttrs) {
+		if (learnLevelService.listActive().size() <= 0) {
+			sendErrorMessageWhenRedirect(redirectAttrs,
+					"discipline.emptylearnlevel");
+			return "redirect:/learnlevel";
+		}
+		if (learnSpeacialtyService.listActive().size() <= 0) {
+			sendErrorMessageWhenRedirect(redirectAttrs,
+					"discipline.emptylearnspeacialty");
+			return "redirect:/learnspeacialty";
+		}
+		initSelectData(model);
+		return "discipline/create";
+	}
+
+	/**
+	 * Save
+	 * 
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.SYSTEM_DISCIPLINE})
+	@RequestMapping(method = RequestMethod.POST)
+	public String save(Discipline discipline, Long learnLevelId,
+			Long learnSpeacialtyId, Model model, RedirectAttributes redirectAttr) {
+		if (null == learnLevelId || null == learnSpeacialtyId) {
+			initSelectData(model);
+			model.addAttribute("discipline", discipline);
+			sendErrorMessage(model, "select.value.null");
+			return "discipline/create";
+		}
+		discipline.setLearnLevel(learnLevelService.findById(learnLevelId));
+		discipline.setLearnSpeacialty(learnSpeacialtyService
+				.findById(learnSpeacialtyId));
+
+		if (disciplineService.checkExsitCode(discipline.getCode())) {
+			initSelectData(model);
+			model.addAttribute("discipline", discipline);
+			sendErrorMessage(model, "discipline.code.exsit");
+			return "discipline/create";
+		}
+
+		if (disciplineService.checkExsitByLearnSpeacialtyIdAndLearnLevelId(
+				discipline.getLearnSpeacialty().getId(), discipline
+						.getLearnLevel().getId())) {
+			sendErrorMessageWithParameter(model, "common.name.exsit",
+					discipline.getLearnLevel().getName()
+							+ discipline.getLearnSpeacialty().getName());
+			initSelectData(model);
+			model.addAttribute("discipline", discipline);
+			return "discipline/create";
+		}
+		try {
+			disciplineService.saveDiscipline(discipline);
+			sendNoticeWhenRedirect(redirectAttr, "common.add.success");
+		} catch (StudySpaceCreateFaildException e) {
+			LOGGER.error(e.getMessage());
+			sendErrorMessageWhenRedirect(redirectAttr, "studyspace.discipline.sendError");
+		}
+		return "redirect:/discipline";
+	}
+
+	/**
+	 * Delete The Discipline
+	 * 
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.SYSTEM_DISCIPLINE})
+	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+	public String destroy(@PathVariable Long id, RedirectAttributes redirectAttr) {
+		// 是否存在
+		Discipline discipline = disciplineService.findById(id);
+		if (null == discipline) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr,
+					"common.obj.notfound", "id:" + id);
+			return "redirect:/discipline";
+		}
+
+		// Destroy
+		try {
+			disciplineService.delete(id);
+			sendNoticeWhenRedirect(redirectAttr, "common.destroy.success");
+		} catch (Exception e) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr,
+					"common.reference.delete", discipline.getLearnLevel()
+							.getName()
+							+ discipline.getLearnSpeacialty().getName());
+		}
+
+		return "redirect:/discipline";
+	}
+
+	
+	
+
+	private void initSelectData(Model model) {
+		List<LearnLevel> learnLevelList = learnLevelService.listActive();
+		List<LearnSpeacialty> learnSpeacialtyList = learnSpeacialtyService
+				.listActive();
+		LearnRange[] learnRages = LearnRange.values();
+		model.addAttribute("learnRages", learnRages);
+		model.addAttribute("learnLevelList", learnLevelList);
+		model.addAttribute("learnSpeacialtyList", learnSpeacialtyList);
+
+	}
+	
+	
+}

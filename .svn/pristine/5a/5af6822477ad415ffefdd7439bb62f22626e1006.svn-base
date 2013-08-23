@@ -1,0 +1,161 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import java.util.Date;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.exception.StudySpaceClassRoomCreateFaildException;
+import com.boventech.gplearn.exception.StudySpaceClassRoomDestroyFaildException;
+import com.boventech.gplearn.service.LearnAreaService;
+import com.boventech.gplearn.service.LearnClassService;
+import com.boventech.gplearn.service.LearnSubProjectService;
+
+@Controller
+@RequestMapping(value = "/learnClass")
+public class LearnClassController extends ApplicationController {
+	private static final Logger LOGGER = LoggerFactory.getLogger(LearnClassController.class);
+
+    @Autowired
+    private LearnClassService learnClassService;
+
+    @Autowired
+    private LearnAreaService learnAreaService;
+
+    @Autowired
+    private LearnSubProjectService learnSubProjectService;
+
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model) {
+        List<LearnClass> classes = this.learnClassService.listAll();
+        model.addAttribute("classes", classes);
+        return "/learnClass/index";
+    }
+
+    @RequestMapping(method = RequestMethod.POST)
+    public String create(Model model, RedirectAttributes redirectAttr, LearnClass learnClass, String areaId,
+            String projectId) {
+        if (this.learnClassService.isExistByCode(learnClass.getCode())) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", learnClass.getCode());
+            model.addAttribute("learnArea", learnClass);
+            model.addAttribute("areas", this.learnAreaService.listEnable());
+            model.addAttribute("projects", this.learnSubProjectService.listAll());
+            return "learnClass/add";
+        }
+        learnClass.setCreateTime(new Date());
+        learnClass.setLearnArea(this.learnAreaService.findById(Long.parseLong(areaId)));
+        learnClass.setLearnProject(this.learnSubProjectService.findById(Long.parseLong(projectId)));
+        try {
+			this.learnClassService.saveLearnClass(learnClass);
+			sendNoticeWhenRedirect(redirectAttr, "common.add.success");
+		} catch (StudySpaceClassRoomCreateFaildException e) {
+			LOGGER.error(e.getMessage());
+			sendErrorMessageWhenRedirect(redirectAttr, "studyspace.learnclass.sendError");
+		}
+        return "redirect:/learnClass";
+    }
+    
+   
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public String update(Model model, @PathVariable String id, RedirectAttributes redirectAttr,
+            LearnClass learnClass, String areaId, String projectId) {
+        if (this.learnClassService.isExistByCodeWhitoutCurrent(learnClass)) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", learnClass.getCode());
+            model.addAttribute("learnClass", this.learnClassService.findById(Long.parseLong(id)));
+            model.addAttribute("areas", this.learnAreaService.listEnable());
+            model.addAttribute("projects", this.learnSubProjectService.listAll());
+            return "learnClass/edit";
+        }
+        learnClass.setLearnArea(this.learnAreaService.findById(Long.parseLong(areaId)));
+        learnClass.setLearnProject(this.learnSubProjectService.findById(Long.parseLong(projectId)));
+        this.learnClassService.update(learnClass);
+        sendNoticeWhenRedirect(redirectAttr, "common.update.success");
+        return "redirect:/learnClass";
+    }
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public String destroy(Model model, @PathVariable Long id, RedirectAttributes redirectAttrs) {
+        if (checkEntityEmpty(learnClassService.findById(id))) {
+            return "error/404";
+        }
+        try {
+			this.learnClassService.deleteLearnClass(id);
+			sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+		} catch (StudySpaceClassRoomDestroyFaildException e) {
+			LOGGER.error(e.getMessage());
+			sendErrorMessageWhenRedirect(redirectAttrs, "studyspace.learnclass.detroyError");
+		}
+        return "redirect:/learnClass";
+    }
+    
+    
+
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public String show(Model model, @PathVariable String id, RedirectAttributes redirectAttrs) {
+        if (isNull(redirectAttrs, model, true, id)) {
+            return "redirect:/learnClass";
+        }
+        return "/learnClass/show";
+    }
+
+    @RequestMapping(value = "/{id}/edit", method = RequestMethod.GET)
+    public String edit(Model model, @PathVariable String id, RedirectAttributes redirectAttrs) {
+        if (isNull(redirectAttrs, model, true, id)) {
+            return "redirect:/learnClass";
+        }
+        return "/learnClass/edit";
+    }
+
+    @RequestMapping(value = "/new", method = RequestMethod.GET)
+    public String editNew(ModelMap model, RedirectAttributes redirectAttr) {
+        if (!this.learnAreaService.checkExist()) {
+            sendErrorMessageWhenRedirect(redirectAttr, "learnClass.learnArea.list.empty");
+            return "redirect:/learnArea";
+        } else if (!this.learnSubProjectService.checkExist()) {
+            sendErrorMessageWhenRedirect(redirectAttr, "learnClass.learnSubProject.list.empty");
+            return "redirect:/learnproject";
+        }
+        model.addAttribute("areas", this.learnAreaService.listEnable());
+        model.addAttribute("projects", this.learnSubProjectService.listAll());
+        return "/learnClass/add";
+    }
+
+    private boolean isNull(final RedirectAttributes redirectAttrs, Model model, boolean whithModel, String id) {
+        LearnClass learnClass = this.learnClassService.findById(Long.parseLong(id));
+        if (null == learnClass) {
+            sendErrorMessageWithParameterWhenRedirect(redirectAttrs, "common.obj.notfound", "id:" + id);
+            return true;
+        } else {
+            if (whithModel) {
+                model.addAttribute("learnClass", learnClass);
+                model.addAttribute("areas", this.learnAreaService.listEnable());
+                model.addAttribute("projects", this.learnSubProjectService.listAll());
+            }
+            return false;
+        }
+    }
+}

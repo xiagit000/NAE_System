@@ -1,0 +1,15 @@
+package com.boventech.gplearn.exception;
+
+public class UserDestroyInCASFaildException extends Exception {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3753766069992482994L;
+
+	@Override
+	public String getMessage() {
+		return "*********************UserDestroyInCASFaildException***********************";
+	}
+
+}

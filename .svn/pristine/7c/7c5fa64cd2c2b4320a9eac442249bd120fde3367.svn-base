@@ -1,0 +1,24 @@
+package com.boventech.gplearn.dao;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.SchoolRoll;
+import com.boventech.gplearn.entity.User;
+
+public interface SchoolRollDao extends BaseDao<SchoolRoll, Long> {
+
+	List<SchoolRoll> listActiveSchoolRoll(Integer page);
+
+	List<SchoolRoll> listAllInformationByUserId(Long userId);
+	
+	void save(List<SchoolRoll> schoolRolls);
+	
+	Integer countByLearnClass(LearnClass learnClass);
+	
+	List<SchoolRoll> findByUser(User user);
+
+	SchoolRoll findByUserNewest(User user);
+	
+	Integer getUserNumberByLearnClass(LearnClass learnClass);
+}

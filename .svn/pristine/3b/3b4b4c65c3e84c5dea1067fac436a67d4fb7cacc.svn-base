@@ -1,0 +1,19 @@
+package com.boventech.gplearn.exception;
+
+public class LocalDatabaseUserNotFoundException extends Exception {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3263212202289576003L;
+
+	@Override
+	public String getMessage() {
+		return "__________________________________LocalDatabaseUserNotFoundException__________________________________";
+	}
+
+	
+	
+	
+
+}

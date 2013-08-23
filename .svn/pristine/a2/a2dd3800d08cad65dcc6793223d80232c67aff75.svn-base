@@ -1,0 +1,17 @@
+package com.boventech.gplearn.dao;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.BigSubject;
+
+public interface BigSubjectDao extends BaseDao<BigSubject, Long> {
+
+	List<BigSubject> listWithPagination(Integer page);
+
+	boolean isAlreadyExsitByTitle(String title);
+
+	boolean isAlradyExsitByTitleWithOutCurrent(BigSubject bigSubject);
+
+	List<BigSubject> listWithBatch(Batch currentBatch);
+}

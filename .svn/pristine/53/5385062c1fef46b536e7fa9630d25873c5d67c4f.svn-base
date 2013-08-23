@@ -1,0 +1,83 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.CityDao;
+import com.boventech.gplearn.entity.City;
+import com.boventech.gplearn.service.CityService;
+
+@Service
+@Transactional
+public class CityServiceImpl implements CityService {
+
+    @Autowired
+    private CityDao cityDao;
+
+    @Override
+    public void save(City t) {
+        this.cityDao.save(t);
+    }
+
+    @Override
+    public void delete(City t) {
+
+    }
+
+    @Override
+    public void delete(Long id) {
+
+    }
+
+    @Override
+    public void update(City t) {
+
+    }
+
+    @Override
+    public City findById(Long id) {
+        return null;
+    }
+
+    @Override
+    public List<City> getAllCities() {
+        return this.cityDao.getAllCities();
+    }
+
+    @Override
+    public List<City> getProvinces() {
+        return this.cityDao.getProvinces();
+    }
+
+    @Override
+    public City getCity(String elCode) {
+        return null;
+    }
+
+    @Override
+    public City getProvince(String elCode) {
+        return null;
+    }
+
+    @Override
+    public City getCitiesByProvince(String elCode) {
+        return null;
+    }
+
+}

@@ -1,0 +1,42 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletResponse;
+
+import com.boventech.gplearn.entity.Account;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.util.ObjectFiller;
+
+public interface UserService extends BaseService<User, Long> {
+    Long getMaxIndex();
+
+    void save(List<User> users);
+
+    List<User> generateUsers(List<Account> accounts, EnrollmentPlan enrollmentPlan);
+
+    List<User> listAllWithPagnate(Integer page);
+    
+    List<User> listAllWithoutPagnate();
+
+    void exportExcel(HttpServletResponse response, List<String> heads, String fileName, String description,
+            ObjectFiller filler);
+
+	boolean checkEntityExsitByLoginName(String loginName);
+
+	User findByLoginName(String loginName);
+}

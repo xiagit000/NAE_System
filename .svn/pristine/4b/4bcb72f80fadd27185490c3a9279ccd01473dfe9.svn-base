@@ -1,0 +1,103 @@
+package com.boventech.gplearn.controller;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.entity.SchoolRoll;
+import com.boventech.gplearn.entity.SchoolRoll.SchoolRollType;
+import com.boventech.gplearn.service.SchoolRollService;
+
+@Controller
+@RequestMapping(value="/schoolroll")
+public class SchoolRollController extends ApplicationController {
+
+	@Autowired
+	private SchoolRollService schoolRollService;
+	
+	@RequiredPrivilege(value={Privilege.SYSTEM_SCHOOLROLL})
+	@RequestMapping
+	public String index(Integer page,Model model,HttpServletRequest request){
+		setSiteBarActive("xw", "schoolroll", request);
+		List<SchoolRoll> list = schoolRollService.listActiveSchoolRoll(page);
+		model.addAttribute("list",list);
+		return "schoolroll/index";
+	}
+
+	/**
+	 * 编辑的跳转
+	 */
+	@RequiredPrivilege(value={Privilege.SYSTEM_SCHOOLROLL})
+	@RequestMapping(value="/{id}/update")
+	public String edit(@PathVariable Long id,RedirectAttributes redirectAttr,Model model){
+		SchoolRoll schoolRoll = schoolRollService.findById(id);
+		if(null == schoolRoll){
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr, "common.obj.notfound", "id:"+id);
+			return "redirect:/schoolroll";
+		}
+		model.addAttribute("schoolRoll",schoolRoll);
+		SchoolRollType[] schoolRollTypeList=SchoolRollType.values();
+		model.addAttribute("schoolRollTypeList", schoolRollTypeList);
+		return "schoolroll/edit";
+	}
+	
+	
+	
+	@RequiredPrivilege(value={Privilege.SYSTEM_SCHOOLROLL})
+	@RequestMapping(value ="/{id}",method=RequestMethod.PUT)
+	public String update(SchoolRoll schoolRoll,RedirectAttributes redirectAttr,Model model){
+		SchoolRoll oldSchoolRoll= schoolRollService.findById(schoolRoll.getId());
+		if(null==oldSchoolRoll){
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr, "common.obj.notfound", "id:"+schoolRoll.getId());
+			return "redirect:/schoolroll";
+		}
+		SchoolRoll newSchoolRoll = new SchoolRoll();
+		oldSchoolRoll.setNewest(false);
+		schoolRollService.update(oldSchoolRoll);
+		
+		newSchoolRoll.setLearnClass(oldSchoolRoll.getLearnClass());
+		newSchoolRoll.setCreateDate(new Date());
+		newSchoolRoll.setNewest(true);
+		newSchoolRoll.setSchoolRollType(schoolRoll.getSchoolRollType());
+		newSchoolRoll.setUser(oldSchoolRoll.getUser());
+		
+		schoolRollService.save(newSchoolRoll);
+		sendNoticeWhenRedirect(redirectAttr, "common.update.success");
+		/**
+		 * TODO 更改学生的学籍异动后，根据学籍类型向学习平台发出推送
+		 */
+		return "redirect:/schoolroll";
+	}
+	
+	@RequiredPrivilege(value={Privilege.SYSTEM_SCHOOLROLL})
+	@RequestMapping(value="/{id}")
+	public String show(@PathVariable Long id,RedirectAttributes redirectAttr,Model model){
+		SchoolRoll schoolRoll = schoolRollService.findById(id);
+		if(null==schoolRoll){
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr, "common.obj.notfound", "id:"+id);
+			return "redirect:/schoolroll";
+		}
+		List<SchoolRoll> schoolRollList=getAllSchoolRollInformationByUserId(schoolRoll.getUser().getId());
+		model.addAttribute("schoolRoll", schoolRoll);
+		model.addAttribute("schoolRollList", schoolRollList);
+		return "schoolroll/show";
+	}
+	
+	
+	private List<SchoolRoll> getAllSchoolRollInformationByUserId(Long userId){
+		return schoolRollService.listAllInformationByUserId(userId);
+	}
+	
+	
+}

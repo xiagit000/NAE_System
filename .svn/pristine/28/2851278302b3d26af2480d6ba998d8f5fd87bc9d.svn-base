@@ -1,0 +1,143 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.controller;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.GraduateStandard;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.GraduateStandardService;
+
+@Controller
+@RequestMapping(value = "graduateStandard")
+public class GraduateStandardController extends ApplicationController {
+
+    private Logger logger = Logger.getLogger(this.getClass().getName());
+
+    @Autowired
+    private GraduateStandardService graduateStandardService;
+
+    @Autowired
+    private BatchService batchService;
+
+    @RequiredPrivilege(value = { Privilege.SYSTEM_GRADUATE })
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(ModelMap model, HttpServletRequest request) {
+        setSiteBarActive("jc", "graduateStandard", request);
+        model.addAttribute("graduateStandards", this.graduateStandardService.listAll());
+        return "graduateStandard/index";
+    }
+
+    @RequiredPrivilege(value = { Privilege.SYSTEM_GRADUATE })
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+    public String update(Model model, @PathVariable String id, GraduateStandard graduate,
+            final RedirectAttributes redirectAttrs, String batchId) {
+        Batch batch = this.batchService.findById(Long.parseLong(batchId));
+        graduate.setBatch(batch);
+        if (!checkDate(graduate)) {
+            sendErrorMessage(model, "graduateStandard.graduateTime.error");
+            model.addAttribute("graduateStandard", graduate);
+            model.addAttribute("batchs", this.batchService.listAll());
+            return "graduateStandard/edit";
+        }
+        graduate.setPassScore(graduate.getPassScore()/100);
+        this.graduateStandardService.update(graduate);
+        sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+        return "redirect:/graduateStandard";
+    }
+
+    @RequiredPrivilege(value = { Privilege.SYSTEM_GRADUATE })
+    @RequestMapping(method = RequestMethod.POST)
+    public String create(Model model, GraduateStandard graduateStandard, String batchId,
+            final RedirectAttributes redirectAttrs) {
+        Batch batch = this.batchService.findById(Long.parseLong(batchId));
+        graduateStandard.setBatch(batch);
+        if (this.graduateStandardService.checkeExistByBatch(batch)) {
+            sendErrorMessageWithParameter(model, "common.name.exsit", batch.getCode() + "-" + batch.getName());
+            model.addAttribute("graduateStandard", graduateStandard);
+            model.addAttribute("batchs", this.batchService.listAll());
+            return "graduateStandard/add";
+        }
+        if (!checkDate(graduateStandard)) {
+            sendErrorMessage(model, "graduateStandard.graduateTime.error");
+            model.addAttribute("graduateStandard", graduateStandard);
+            model.addAttribute("batchs", this.batchService.listAll());
+            return "graduateStandard/add";
+        }
+        graduateStandard.setPassScore(graduateStandard.getPassScore()/100);
+        this.graduateStandardService.save(graduateStandard);
+        sendNoticeWhenRedirect(redirectAttrs, "common.add.success");
+        return "redirect:/graduateStandard";
+    }
+
+    @RequiredPrivilege(value = { Privilege.SYSTEM_GRADUATE })
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public String destroy(ModelMap model, @PathVariable String id, final RedirectAttributes redirectAttrs) {
+        try {
+            this.graduateStandardService.delete(Long.parseLong(id));
+            sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+        } catch (JpaSystemException e) {
+            logger.error(e.getMessage());
+            sendErrorMessageWhenRedirect(redirectAttrs, "common.hasnode.warn");
+            return "redirect:/graduateStandard";
+        }
+        return "redirect:/graduateStandard";
+    }
+
+    @RequiredPrivilege(value = { Privilege.SYSTEM_GRADUATE })
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public String show(ModelMap model, @PathVariable String id) {
+        model.addAttribute("graduateStandard", this.graduateStandardService.findById(Long.parseLong(id)));
+        return "graduateStandard/show";
+    }
+
+    @RequiredPrivilege(value = { Privilege.SYSTEM_GRADUATE })
+    @RequestMapping(value = "/{id}/edit", method = RequestMethod.GET)
+    public String edit(ModelMap model, @PathVariable String id) {
+        model.addAttribute("graduateStandard", this.graduateStandardService.findById(Long.parseLong(id)));
+        return "graduateStandard/edit";
+    }
+
+    @RequiredPrivilege(value = { Privilege.SYSTEM_GRADUATE })
+    @RequestMapping(value = "/new", method = RequestMethod.GET)
+    public String editNew(ModelMap model,RedirectAttributes redirectAttr) {
+    	if(this.batchService.listAll().isEmpty()){
+    		sendErrorMessageWhenRedirect(redirectAttr,
+			"learnPlan.currentbatch.null");
+			return "redirect:/batch";
+    	}
+        model.addAttribute("batchs", this.batchService.listAll());
+        return "graduateStandard/add";
+    }
+
+    private boolean checkDate(GraduateStandard graduateStandard) {
+        return !(graduateStandard.getGraduateTime().getTime() < graduateStandard.getBatch().getBeginTime()
+                .getTime() || graduateStandard.getGraduateTime().getTime() > graduateStandard.getBatch()
+                .getEndTime().getTime());
+    }
+}

@@ -1,0 +1,49 @@
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import com.boventech.gplearn.dao.BigSubjectDao;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.BigSubject;
+import com.boventech.gplearn.entity.Discipline;
+
+public class BigSubjectDaoImpl extends BaseDaoImpl<BigSubject,Long> implements
+		BigSubjectDao {
+
+	private static final String  DEFAULT_ORDER=" ORDER BY bsj.id DESC";
+	
+	@Override
+	public List<BigSubject> listWithPagination(Integer page) {
+		String queryString = "FROM BigSubject bsj";
+		return executeQueryWithPagination(queryString, DEFAULT_ORDER, page);
+	}
+
+	@Override
+	public boolean isAlreadyExsitByTitle(String title) {
+		String queryString = "FROM BigSubject bsj WHERE bsj.title=?1";
+		return !executeQueryWithoutPaging(queryString, title).isEmpty();
+	}
+
+	@Override
+	public boolean isAlradyExsitByTitleWithOutCurrent(BigSubject bigSubject) {
+		String queryString = "FROM BigSubject bsj WHERE bsj.title=?1 AND bsj.id<>?2";
+		return !executeQueryWithoutPaging(queryString, bigSubject.getTitle(),bigSubject.getId()).isEmpty();
+	}
+
+	@Override
+	public List<BigSubject> listWithBatch(Batch currentBatch) {
+		String queryString  ="FROM BigSubject bsj WHERE bsj.batch.id=?1";
+		return executeQueryWithoutPaging(queryString, currentBatch.getId());
+	}
+
+	@Override
+	public List<BigSubject> listWithDisciplineInCurrentBatch(
+			Discipline discipline, Batch currentBatch) {
+		String queryString = "FROM BigSubject bsj WHERE bsj.batch=?1 AND discipline=?2";
+		return executeQueryWithoutPaging(queryString, currentBatch,discipline);
+	}
+	
+
+
+
+}

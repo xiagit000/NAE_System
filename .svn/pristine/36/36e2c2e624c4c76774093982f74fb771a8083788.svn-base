@@ -1,0 +1,81 @@
+package com.boventech.gplearn.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.QuestionDao;
+import com.boventech.gplearn.entity.Discipline;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.Question;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.QuestionService;
+
+@Service
+@Transactional
+public class QuestionServiceImpl implements QuestionService {
+
+	@Autowired
+	private QuestionDao questionDao;
+	
+	@Override
+	public void delete(Question t) {
+		questionDao.delete(t);
+	}
+
+	@Override
+	public void delete(Long id) {
+		questionDao.deleteById(id);
+	}
+
+	@Override
+	public Question findById(Long id) {
+		return questionDao.findByID(id);
+	}
+
+	@Override
+	public void save(Question t) {
+		questionDao.save(t);
+	}
+
+	@Override
+	public void update(Question t) {
+		questionDao.update(t);
+	}
+
+	@Override
+	public List<Question> listByAskerWithPagination(User user,Integer page) {
+		return questionDao.listByAsker(user,page);
+	}
+
+	@Override
+	public List<Question> listByAsker(User user) {
+		return questionDao.listByAsker(user);
+	}
+
+	@Override
+	public List<Question> listWithPaginationBylearnClass(LearnClass learnClass,
+			Integer page) {
+		
+		return this.questionDao.listWithPaginationBylearnClass(learnClass, page);
+	}
+
+	@Override
+	public List<Question> listwithPaginationByDiscipline(Discipline discipline,
+			Integer page) {
+		return questionDao.listwithPaginationByDiscipline(discipline, page);
+	}
+
+	@Override
+	public Integer countByLearnClass(LearnClass learnClass) {
+		return questionDao.countByLearnClass(learnClass);
+	}
+
+	@Override
+	public List<Question> listByLearnClass(LearnClass learnClass) {
+		return questionDao.listByLearnClass(learnClass);
+	}
+
+}

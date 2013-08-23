@@ -1,0 +1,32 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+
+   <div class="side_bar">
+			<h1 class="sider_menu"><span class="img folder"></span>个人管理</h1>
+				<ul class="ul_list">
+					
+					<li <c:if test="${siteItem eq 'me'}">class="checked"</c:if>><r:a href="/user/me">个人信息</r:a></li>
+					<li <c:if test="${siteItem eq 'learnspeacialty'}">class="checked"</c:if> ><r:a href="/user/changepass">修改密码</r:a></li>
+				</ul>
+
+			<h1 class="sider_menu" ><span class="img folder"></span>学习功能区</h1>
+				<ul class="ul_list">
+					
+					<li <c:if test="${siteItem eq 'learncourse'}">class="checked"</c:if>><r:a href="/learnclass/show">班级信息</r:a></li>
+					<li <c:if test="${siteItem eq 'learnplan'}">class="checked"</c:if>><r:a href="/learnthesis/show">研修论文提交</r:a></li>
+					<li <c:if test="${siteItem eq 'bigsubject'}">class="checked"</c:if>><r:a href="/grade/show">成绩查看</r:a></li>
+				</ul>
+					
+			<h1 class="sider_menu"><span class="img folder"></span>学习资料区</h1>
+				<ul class="ul_list">
+					<li <c:if test="${siteItem eq 'enrollmentplan'}">class="checked"</c:if>><r:a href="/learnresource/disciplineresources">学科专家共享资料</r:a></li>
+					<li <c:if test="${siteItem eq 'account'}">class="checked"</c:if>><r:a href="/learnresource/projectresources">项目专家共享资料</r:a></li>
+				</ul>
+
+			<h1 class="sider_menu"><span class="img search"></span>我要提问</h1>
+				<ul class="ul_list">
+					<li <c:if test="${siteItem eq 'user'}">class="checked"</c:if>><r:a href="#">我问老师</r:a></li>
+				</ul>
+			
+	</div>

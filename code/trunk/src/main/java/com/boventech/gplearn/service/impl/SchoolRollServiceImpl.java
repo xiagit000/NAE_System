@@ -1,0 +1,158 @@
+package com.boventech.gplearn.service.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.SchoolRollDao;
+import com.boventech.gplearn.entity.Discipline;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.SchoolRoll;
+import com.boventech.gplearn.entity.SchoolRoll.SchoolRollType;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.SchoolRollService;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+
+@Service
+@Transactional
+public class SchoolRollServiceImpl implements SchoolRollService{
+
+	@Autowired
+	private SchoolRollDao schoolRollDao;
+	
+	@Override
+	public List<SchoolRoll> listActiveSchoolRoll(Integer page) {
+		return schoolRollDao.listActiveSchoolRoll(page);
+	}
+
+	@Override
+	public void delete(SchoolRoll t) {
+		schoolRollDao.delete(t);
+	}
+
+	@Override
+	public void delete(Long id) {
+		schoolRollDao.deleteById(id);
+	}
+
+	@Override
+	public SchoolRoll findById(Long id) {
+		return schoolRollDao.findByID(id);
+	}
+
+	@Override
+	public void save(SchoolRoll t) {
+		schoolRollDao.save(t);
+	}
+
+	@Override
+	public void update(SchoolRoll t) {
+		schoolRollDao.update(t);
+	}
+
+	@Override
+	public List<SchoolRoll> listAllInformationByUserId(Long userId) {
+		return schoolRollDao.listAllInformationByUserId(userId);
+	}
+
+    @Override
+    public List<SchoolRoll> generateSchoolRolls(List<User> users,EnrollmentPlan enrollmentPlan) {
+        List<SchoolRoll> schoolRolls=new ArrayList<SchoolRoll>();
+        for (User user : users) {
+            SchoolRoll schoolRoll=new SchoolRoll();
+            schoolRoll.setUser(user);
+            schoolRoll.setLearnClass(enrollmentPlan.getLearnClass());
+            schoolRoll.setNewest(true);
+            schoolRoll.setSchoolRollType(SchoolRollType.NORMAL);
+            schoolRolls.add(schoolRoll);
+        }
+        return schoolRolls;
+    }
+
+    @Override
+    public void save(List<SchoolRoll> schoolRolls) {
+       this.schoolRollDao.save(schoolRolls);        
+    }
+
+    @Override
+    public Integer countByLearnClass(LearnClass learnClass) {
+        return this.schoolRollDao.countByLearnClass(learnClass);
+    }
+
+    @Override
+    public List<SchoolRoll> findSchoolRollsByUser(User user) {
+        return this.schoolRollDao.findByUser(user);
+    }
+    
+    @Override
+    public SchoolRoll findSchoolRollByUser(User user) {
+        return this.schoolRollDao.findByUser(user).get(0);
+    }
+
+    @Override
+    public void delete(List<SchoolRoll> schoolRolls) {
+        this.schoolRollDao.delete(schoolRolls);
+    }
+
+	@Override
+	public SchoolRoll findByUserNewest(User user) {
+		return this.schoolRollDao.findByUserNewest(user);
+	}
+
+	@Override
+	public List<User> findUsersByClass(LearnClass learnClass) {
+		List<SchoolRoll> schoolRolls=this.schoolRollDao.findUsersByClass(learnClass);
+		List<User> users = Lists.newArrayList();
+		for(SchoolRoll schoolroll : schoolRolls){
+			users.add(schoolroll.getUser());
+		}
+		return users;
+	}
+
+	@Override
+	public void deleteByUser(User user) {
+		this.schoolRollDao.deleteByUser(user);
+	}
+
+	@Override
+	public boolean checkExistByUser(User user) {
+		return this.schoolRollDao.checkExistByUser(user);
+	}
+
+	@Override
+	public List<User> listActiveByLearnClass(LearnClass learnClass) {
+		List<SchoolRoll> schoolRolls = this.schoolRollDao.listActiveByLearnClass(learnClass);
+		List<User> users =Lists.newArrayList();
+		for(int i =0;i<schoolRolls.size();i++){
+			users.add(schoolRolls.get(i).getUser());
+		}
+		return users;
+	}
+
+	@Override
+	public List<SchoolRoll> listActiveByClassWithPagination(LearnClass learnClass,
+			Integer page) {
+		return schoolRollDao.listActiveByClassWithPagination(learnClass,page);
+	}
+
+    @Override
+    public List<User> findUsersByDiscipline(Discipline discipline) {
+        List<SchoolRoll> schoolRolls=this.schoolRollDao.findSchoolRollsByDiscipline(discipline);
+        List<User> users = Lists.transform(schoolRolls, function);  
+        return users;
+    }
+    
+    Function<SchoolRoll,User> function=new Function<SchoolRoll, User>(){
+        @Override  
+        public User apply(SchoolRoll s) {  
+            return s.getUser();  
+        }  
+    };
+
+
+}

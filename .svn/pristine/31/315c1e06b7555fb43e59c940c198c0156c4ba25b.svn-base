@@ -1,0 +1,43 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.boventech.gplearn.dao.SchoolSpaceDao;
+import com.boventech.gplearn.entity.SchoolSpace;
+
+@Repository
+public class SchoolSpaceDaoImpl extends BaseDaoImpl<SchoolSpace, Long> implements SchoolSpaceDao{
+
+    @Override
+    public boolean checkExistBySchoolName(String schoolName) {
+        return !executeQueryWithoutPaging("from SchoolSpace where schoolName=?1",schoolName).isEmpty();
+    }
+
+    @Override
+    public SchoolSpace findBySchoolName(String schoolName) {
+    	List<SchoolSpace> list = executeQueryWithoutPaging("from SchoolSpace where schoolName=?1",schoolName);
+        return list.isEmpty()?null:list.get(0);
+    }
+
+	@Override
+	public List<SchoolSpace> listByUncreate() {
+		String queryString = "from SchoolSpace where creted=?1";
+		return executeQueryWithoutPaging(queryString, false);
+	}
+
+}

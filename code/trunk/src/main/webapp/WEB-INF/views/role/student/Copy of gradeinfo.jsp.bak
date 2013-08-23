@@ -1,0 +1,62 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r"%>
+
+<r:layout title="查看成绩信息">
+<jsp:include page="../../layout/student_navbar.jsp" />
+<div class="wrapper">
+	<ul class="breadcrumb">
+		<li><r:a href="/">首页</r:a> <span class="divider">/</span></li>
+		<li class="active">我的成绩信息</li>
+	</ul>
+	 <table class="table table-hover" >
+         <tbody>
+         	<tr>
+         		<th width="250">视频总比重/已完成</th>
+         	</tr>
+         	<tr>
+         		<td>${grade.scoringStandard.learnVideoProportion*100}%/${grade.learnVideoScore}%</td>
+         	</tr>
+         	<tr>
+         		<th>研修讨论总比重/已完成</th>
+         	</tr>
+         	<tr>
+         		<td>${grade.scoringStandard.learnDiscussProportion*100}%/${grade.learnDiscussScore}%</td>
+         	</tr>
+         	<tr>
+         		<th>研修论文总比重/已完成</th>
+         	</tr>
+         	<tr>
+         		<td>${grade.scoringStandard.learnThesisProportion*100}%/${grade.learnThesisScore}%</td>
+         	</tr>
+         	<tr>
+         		<th>平时成绩总比重/已完成</th>
+         	</tr>
+         	<tr>
+         		<td>${grade.scoringStandard.usuallyProportion*100}%/${grade.usuallyScore}%</td>
+         	</tr>
+         	<tr>
+         		<th>总进度</th>
+         	</tr>
+         	<tr><td>${grade.totalScore}</td></tr>
+         	<tr>
+         		<th>目前几个比率(及格比率&nbsp;&nbsp;:&nbsp;&nbsp;${graduateStandard.passScore}%)</th>
+         	</tr>
+         	<tr>
+         		<td>
+         			<c:if test="${grade.totalScore >= graduateStandard.passScore}">
+         				<span style="color: blue;font-weight: bold;">已及格</span>
+         			</c:if>
+         			<c:if test="${grade.totalScore < graduateStandard.passScore}">
+         				<span style="color: red;font-weight: bold;">不及格</span>
+         			</c:if>
+         		</td>
+         	</tr>
+         	
+         </tbody>
+         </table>
+</div>
+</r:layout>

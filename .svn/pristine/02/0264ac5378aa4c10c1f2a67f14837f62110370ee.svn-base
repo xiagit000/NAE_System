@@ -1,0 +1,127 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.CityDao;
+import com.boventech.gplearn.dao.LearnAreaDao;
+import com.boventech.gplearn.entity.City;
+import com.boventech.gplearn.entity.LearnArea;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.LearnAreaService;
+
+@Service
+@Transactional
+public class LearnAreaServiceImpl implements LearnAreaService {
+
+    @Autowired
+    private LearnAreaDao learnAreaDao;
+    
+    @Autowired
+    private CityDao cityDao;
+
+    @Override
+    public void save(LearnArea t) {
+        this.learnAreaDao.save(t);
+    }
+
+    @Override
+    public void delete(LearnArea t) {
+        this.learnAreaDao.delete(t);
+    }
+
+    @Override
+    public void delete(Long id) {
+        this.learnAreaDao.deleteById(id);
+    }
+
+    @Override
+    public void update(LearnArea t) {
+        this.learnAreaDao.update(t);
+    }
+
+    @Override
+    public LearnArea findById(Long id) {
+        return this.learnAreaDao.findByID(id);
+    }
+
+    @Override
+    public List<LearnArea> listAll() {
+        return this.learnAreaDao.listAll();
+    }
+
+    @Override
+    public boolean checkExist() {
+        return !this.learnAreaDao.listAll().isEmpty();
+    }
+
+    @Override
+    public boolean isExistByCode(String code) {
+        return this.learnAreaDao.isExistByCode(code);
+    }
+
+    @Override
+    public boolean isExistByCodeWithoutCurrent(LearnArea learnArea) {
+        return this.learnAreaDao.isExistByCodeWithoutCurrent(learnArea);
+    }
+
+    @Override
+    public boolean isExistByName(String name) {
+        return this.learnAreaDao.isExistByName(name);
+    }
+
+    @Override
+    public boolean isExistByNameWithoutCurrent(LearnArea learnArea) {
+        return this.learnAreaDao.isExistByNameWithoutCurrent(learnArea);
+    }
+
+    @Override
+    public List<LearnArea> listEnable() {
+        return this.learnAreaDao.listEnable();
+    }
+
+    @Override
+    public List<City> getExistProvince() {
+        List<City> provinces=new ArrayList<City>();
+        List<String> elCodes=this.learnAreaDao.getAllElCodes();
+        Set<String> codes=new HashSet<String>();
+        for (String string : elCodes) {
+            codes.add(string.split("-")[0]);
+        }
+        for (String code : codes) {
+            City province=this.cityDao.getProvince(code);
+            provinces.add(province);
+        }
+        return provinces;
+    }
+
+	@Override
+	public List<LearnArea> listWithProvinceCity(City city) {
+		return learnAreaDao.listWithProvinceCity(city);
+	}
+
+	@Override
+	public List<LearnArea> listByPersonIncharge(User currentUser) {
+		return learnAreaDao.findByPersonIncharge(currentUser);
+	}
+
+}

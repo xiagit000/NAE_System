@@ -1,0 +1,20 @@
+package com.boventech.gplearn.controller;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.SessionAttributes;
+
+@Controller
+@SessionAttributes("currentUser")
+public class CommonController {
+
+	@RequestMapping(value="/")
+	public String hello(HttpServletRequest request,Model model){
+		String user=request.getRemoteUser();
+		model.addAttribute("currentUser", user);
+		return "welcome";
+	}
+}

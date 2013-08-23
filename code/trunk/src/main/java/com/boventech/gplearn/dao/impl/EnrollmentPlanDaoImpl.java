@@ -1,0 +1,64 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.boventech.gplearn.dao.EnrollmentPlanDao;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.LearnClass;
+
+@Repository
+public class EnrollmentPlanDaoImpl extends BaseDaoImpl<EnrollmentPlan, Long> implements EnrollmentPlanDao {
+
+    @Override
+    public List<EnrollmentPlan> listAll() {
+        return executeQueryWithoutPaging("from EnrollmentPlan");
+    }
+
+    @Override
+    public boolean isExistByBatchAndClass(EnrollmentPlan enrollmentPlan) {
+        String queryString = "from EnrollmentPlan ep where ep.batch=?1 and ep.learnClass=?2";
+        return !executeQueryWithoutPaging(queryString, enrollmentPlan.getBatch(),
+                enrollmentPlan.getLearnClass()).isEmpty();
+    }
+
+    @Override
+    public boolean isExistByBatchAndClassWithoutCurrent(EnrollmentPlan enrollmentPlan) {
+        String queryString = "from EnrollmentPlan ep where ep.batch=?1 and ep.learnClass=?2 and ep.id<>?3";
+        return !executeQueryWithoutPaging(queryString, enrollmentPlan.getBatch(),
+                enrollmentPlan.getLearnClass(), enrollmentPlan.getId()).isEmpty();
+    }
+
+    @Override
+    public boolean isConflictByDate(EnrollmentPlan enrollmentPlan) {
+        String queryString = "from EnrollmentPlan ep where ?1<ep.batch.beginTime or ?2>ep.batch.endTime";
+        return !executeQueryWithoutPaging(queryString, enrollmentPlan.getBeginTime(),
+                enrollmentPlan.getEndTime()).isEmpty();
+    }
+
+    @Override
+    public EnrollmentPlan findEnrollmentPlanByLearnClass(LearnClass learnClass) {
+        return executeQueryWithoutPaging("from EnrollmentPlan e where e.learnClass=?1", learnClass).get(0);
+    }
+
+	@Override
+	public List<EnrollmentPlan> listWithPagination(Integer page) {
+		String queryString  = "FROM EnrollmentPlan e";
+		return executeQueryWithPagination(queryString, " ORDER BY e.id DESC", page);
+	}
+
+}

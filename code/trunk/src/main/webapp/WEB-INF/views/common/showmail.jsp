@@ -1,0 +1,41 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>  
+<r:layout title="站内信" >
+<r:javascript name="/resources/js/common/newmail.js"></r:javascript>
+<jsp:include page="../layout/mail_navbar.jsp" />
+<div class="wrapper">
+          <ul class="breadcrumb">
+          	  <li><r:a href="/">首页</r:a><span class="divider">/</span></li>
+              <li class="active">查看信件</li>
+          </ul>
+          <h2 class="title_h2"><span class="color_block"></span>站内信</h2>
+          
+          <form id="add_form" action="<c:url value='/mail/sender' />" method="post">
+          <input name="ids" id="ids" type="hidden"/>
+         <table class="table" >
+         <tbody>
+         <tr><td width="100px"><b>收信人：</b></td>
+         <td>${mail.sender.realName }</td></tr>
+         
+         <tr><td><b>标题：</b></td>
+         <td>${mail.message }</td></tr>
+         
+         <tr><td><b>时间：</b></td>
+         <td>${mail.time }</td></tr>
+        
+         <tr><td><b>内容：</b></td>
+         <td>${mail.details }
+         </td>
+         </tr>
+        
+         <tr>
+         <td colspan="2"><r:a class="button" href="/mail/receiver">返回</r:a></tr>
+         </tbody>
+         </table>
+          </form>
+
+	</div>
+</r:layout>

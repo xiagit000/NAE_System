@@ -1,0 +1,134 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.entity;
+
+import java.io.Serializable;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="scoringStandard")
+public class ScoringStandard implements Serializable{
+   
+    private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+    
+    private double learnVideoProportion=0.4;
+    
+    private double learnThesisProportion=0.4;
+    
+    private double learnDiscussProportion=0.15;
+    
+    private double usuallyProportion=0.05;
+    
+    @OneToOne(cascade=CascadeType.REFRESH)
+    @JoinColumn(name="batch_id")
+    private Batch batch;
+
+    /**
+     * @return the learnVideoProportion
+     */
+    public double getLearnVideoProportion() {
+        return learnVideoProportion;
+    }
+
+    /**
+     * @param learnVideoProportion the learnVideoProportion to set
+     */
+    public void setLearnVideoProportion(double learnVideoProportion) {
+        this.learnVideoProportion = learnVideoProportion;
+    }
+
+    /**
+     * @return the learnThesisProportion
+     */
+    public double getLearnThesisProportion() {
+        return learnThesisProportion;
+    }
+
+    /**
+     * @param learnThesisProportion the learnThesisProportion to set
+     */
+    public void setLearnThesisProportion(double learnThesisProportion) {
+        this.learnThesisProportion = learnThesisProportion;
+    }
+
+    /**
+     * @return the learnDiscussProportion
+     */
+    public double getLearnDiscussProportion() {
+        return learnDiscussProportion;
+    }
+
+    /**
+     * @param learnDiscussProportion the learnDiscussProportion to set
+     */
+    public void setLearnDiscussProportion(double learnDiscussProportion) {
+        this.learnDiscussProportion = learnDiscussProportion;
+    }
+
+    /**
+     * @return the usuallyProportion
+     */
+    public double getUsuallyProportion() {
+        return usuallyProportion;
+    }
+
+    /**
+     * @param usuallyProportion the usuallyProportion to set
+     */
+    public void setUsuallyProportion(double usuallyProportion) {
+        this.usuallyProportion = usuallyProportion;
+    }
+
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    /**
+     * @return the batch
+     */
+    public Batch getBatch() {
+        return batch;
+    }
+
+    /**
+     * @param batch the batch to set
+     */
+    public void setBatch(Batch batch) {
+        this.batch = batch;
+    }
+    
+    
+}

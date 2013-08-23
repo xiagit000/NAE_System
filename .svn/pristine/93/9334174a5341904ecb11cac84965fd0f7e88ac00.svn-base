@@ -1,0 +1,63 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+
+import com.boventech.gplearn.dao.BatchDao;
+import com.boventech.gplearn.entity.Batch;
+
+@Repository
+public class BatchDaoImpl extends BaseDaoImpl<Batch, Long> implements BatchDao {
+
+    @Override
+    public List<Batch> listAll() {
+        return executeQueryWithoutPaging("From Batch");
+    }
+
+    @Override
+    public boolean isExistByCode(String code) {
+        String queryString = "FROM Batch b WHERE b.code=?1";
+        return !executeQueryWithoutPaging(queryString, code).isEmpty();
+    }
+
+    @Override
+    public boolean isExistByCodeWithoutCurrent(Batch batch) {
+        String queryString = "FROM Batch b WHERE b.code=?1 AND b.id<>?2";
+        return !executeQueryWithoutPaging(queryString,batch.getCode(),batch.getId()).isEmpty();
+    }
+
+	@Override
+	public Batch getCurrentBatch(Date dateStr) {
+		String queryString = "FROM Batch b WHERE b.beginTime<?1 AND b.endTime>=?2";
+		List<Batch> list=executeQueryWithoutPaging(queryString, dateStr,dateStr);
+		return list.size()>0?list.get(0):null;
+	}
+
+    @Override
+    public boolean isDateConflict(Batch batch) {
+    	String queryString = "FROM Batch b WHERE b.beginTime BETWEEN ?1 AND ?2 or b.endTime BETWEEN ?3 AND ?4";
+        return  !executeQueryWithoutPaging(queryString, batch.getBeginTime(),batch.getEndTime(),batch.getBeginTime(),batch.getEndTime()).isEmpty();
+    }
+
+    @Override
+    public boolean isDateConflictWithoutCurrent(Batch batch) {
+    	String queryString = "FROM Batch b WHERE (b.beginTime BETWEEN ?1 AND ?2 or b.endTime BETWEEN ?3 AND ?4) and b.id<>?5";
+        return  !executeQueryWithoutPaging(queryString, batch.getBeginTime(),batch.getEndTime(),batch.getBeginTime(),batch.getEndTime(),batch.getId()).isEmpty();
+    }
+
+}

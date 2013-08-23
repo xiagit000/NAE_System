@@ -1,0 +1,133 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+
+<r:layout title="学员中心" >
+<jsp:include page="../layout/student_navbar.jsp" />
+<div class="wrapper">
+          <ul class="breadcrumb">
+              <li class="active"><r:a href="/">首页</r:a></li>
+            </ul>
+          <div class="content content_fixed">
+	
+			<h2 class="title_h2"><span class="color_block"></span>最新公告</h2>
+			<div style="padding:0 5px 5px 8px;">
+			<div class="content-box-tabs">
+				<a class="curr-tab" data-tab="#tab0" href="#tab0">班级公告</a><span class="line"></span>
+				
+				<a class="" data-tab="#tab1" href="#tab1">优秀研修论文</a>
+				<span class="line"></span>
+				<a class="" data-tab="#tab2" href="#tab2">项目公告</a>
+				<span class="line"></span>
+				<a class="" data-tab="#tab4" href="#tab4">省督导公告</a>
+				<span class="line"></span>
+				<a class="" data-tab="#tab5" href="#tab5">校督导公告</a>
+				<span class="line"></span>
+				<a class="" data-tab="#tab6" href="#tab6">学科公告</a>
+			
+			
+	        </div>
+			<div id="tab0" class="tab-content default-tab" style="display:block;">
+				<c:forEach items="${classAs}" var="classA">
+						<p><r:a href="/announcement/${classA.id}">${classA.name}</r:a></p>
+				</c:forEach>
+			</div>
+			<div id="tab1" class="tab-content default-tab" style="display:none;">
+				<c:forEach items="${learnThesisList}" var="learnThesis">
+						<p><r:a href="/">${learnThesis.title}</r:a></p>
+				</c:forEach>
+			</div>
+			<div id="tab2" class="tab-content default-tab" style="display:none;">
+				<c:forEach items="${projectAs}" var="projectA">
+						<p><r:a href="/announcement/${projectA.id}">${projectA.name}</r:a></p>
+				</c:forEach>
+				
+			</div>
+			<div id="tab4" class="tab-content default-tab" style="display:none;">
+				<c:forEach items="${provinceAs}" var="provinceA">
+					<p><r:a href="/announcement/${provinceA.id}">${provinceA.name}</r:a></p>
+				</c:forEach>
+				
+			</div>
+			<div id="tab5" class="tab-content default-tab" style="display:none;">
+				<c:forEach items="${schoolAs}" var="schoolA">
+					<p><r:a href="/announcement/${schoolA.id}">${schoolA.name}</r:a></p>
+				</c:forEach>
+				
+			</div>
+			<div id="tab6" class="tab-content hide" style="display:none;">
+				<c:forEach items="${disciplineAs}" var="disciplineA">
+					<p><r:a href="/announcement/${disciplineA.id}">${disciplineA.name}</r:a></p>
+				</c:forEach>
+				
+			</div>
+			</div>
+		</div>
+		
+				<div class="content">
+			<h2 class="title_h2"><span class="color_block"></span>校本研修空间</h2>
+			<table class="main_data">
+				<thead>
+					<tr>
+						
+						<th style="text-align: left;font-weight: bold;">校本研修大课题标题</th>
+						<th width="200">所属学科</th>
+						<th width="200">学科专家</th>
+					</tr>
+				</thead>
+				<tbody>
+					<c:forEach var="bigsubject" items="${bigSubjectAs}">
+						<tr>
+							<td  style="text-align: left;">${bigsubject.title }</td>
+							<td>${bigsubject.discipline.learnLevel.name}${bigsubject.discipline.learnSpeacialty.name}[${bigsubject.discipline.code}]</td>
+							<td>${bigsubject.discipline.personInCharge.realName}</td>
+						</tr>		
+					</c:forEach>
+				</tbody>
+			</table>
+		</div>
+
+
+
+		<div class="content">
+			<h2 class="title_h2"><span class="color_block"></span>本班培训动态数据</h2>
+			<table class="main_data">
+				<thead>
+					<tr>
+						<th>姓名</th>
+						<th>区县</th>
+						<th>学校</th>
+						<th>是否已参训</th>
+						<th>在线时长</th>
+						<th>有效时长</th>
+						<th>视频研修(已得分)</th>
+						<th>研修作业 (已得分)</th>
+						<th>班级讨论 (已得分)</th>
+					</tr>
+				</thead>
+				<tbody>
+					
+						<c:forEach items="${gradesList}" var="grade">
+						<tr>
+							<td>${grade.user.account.name}</td>
+							<td>${learnClass.learnArea.name}</td>
+							<td>${grade.user.account.school}</td>
+							<td>
+							<c:if test="${grade.user.active}">是</c:if>
+							<c:if test="${!grade.user.active}">否</c:if>
+							</td>
+							<td>${grade.onlineTimeCount}</td>
+							<td>${grade.effectiveTimeCount}</td>
+							<td>${grade.learnVideoScore}</td>
+							<td>${grade.learnThesisScore}</td>
+							<td>${grade.learnDiscussScore}</td>
+							</tr>	
+						</c:forEach>
+					
+				</tbody>
+			
+			</table>
+		</div>
+ </div>
+</r:layout>

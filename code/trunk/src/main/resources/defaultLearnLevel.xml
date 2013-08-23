@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="gb2312"?>
+<LearnLevels>
+	<LearnLevel name="国培小学" />
+	<LearnLevel name="国培初中"/>
+	<LearnLevel name="国培高中" />
+	<LearnLevel name="国培职教"/>
+	<LearnLevel name="国培"/>
+</LearnLevels>

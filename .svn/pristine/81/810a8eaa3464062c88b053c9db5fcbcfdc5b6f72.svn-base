@@ -1,0 +1,10 @@
+package com.boventech.gplearn.dao;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.LearnThesis;
+
+public interface LearnThesisDao extends BaseDao<com.boventech.gplearn.entity.LearnThesis, Long> {
+
+	List<LearnThesis> listWithPagination(Integer page);
+}

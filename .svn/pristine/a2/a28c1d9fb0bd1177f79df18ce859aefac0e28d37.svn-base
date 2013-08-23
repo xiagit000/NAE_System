@@ -1,0 +1,125 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+
+<r:layout title="教师中心" >
+<jsp:include page="../layout/teacher_navbar.jsp" />
+<div class="wrapper">
+          <ul class="breadcrumb">
+              <li class="active"><r:a href="/">首页</r:a></li>
+           </ul>
+          <div class="content content_fixed">
+	
+			<h2 class="title_h2"><span class="color_block"></span>最新公告</h2>
+			<div style="padding:0 5px 5px 8px;">
+			<div class="content-box-tabs">
+				<a class="curr-tab" data-tab="#tab0" href="#tab0">班级公告</a><span class="line"></span>
+				
+				<a class="" data-tab="#tab1" href="#tab1">优秀研修论文</a>
+				<span class="line"></span>
+				<a class="" data-tab="#tab2" href="#tab2">项目公告</a>
+				<span class="line"></span>
+				<a class="" data-tab="#tab4" href="#tab4">省督导公告</a>
+				<span class="line"></span>
+				<a class="" data-tab="#tab5" href="#tab5">校督导公告</a>
+				<span class="line"></span>
+				<a class="" data-tab="#tab6" href="#tab6">学科公告</a>
+			
+			
+	        </div>
+			<div id="tab0" class="tab-content default-tab" style="display:block;">
+				<c:forEach items="${classAs}" var="classA">
+						<p><r:a href="/announcement/${classA.id}">${classA.name}</r:a></p>
+				</c:forEach>
+			</div>
+			<div id="tab1" class="tab-content default-tab" style="display:none;">
+				<c:forEach items="${learnThesisList}" var="learnThesis">
+						<p><r:a href="/">${learnThesis.title}</r:a></p>
+				</c:forEach>
+			</div>
+			<div id="tab2" class="tab-content default-tab" style="display:none;">
+				<c:forEach items="${projectAs}" var="projectA">
+						<p><r:a href="/announcement/${projectA.id}">${projectA.name}</r:a></p>
+				</c:forEach>
+				
+			</div>
+			<div id="tab4" class="tab-content default-tab" style="display:none;">
+				<c:forEach items="${provinceAs}" var="provinceA">
+					<p><r:a href="/announcement/${provinceA.id}">${provinceA.name}</r:a></p>
+				</c:forEach>
+				
+			</div>
+			<div id="tab5" class="tab-content default-tab" style="display:none;">
+				<c:forEach items="${schoolAs}" var="schoolA">
+					<p><r:a href="/announcement/${schoolA.id}">${schoolA.name}</r:a></p>
+				</c:forEach>
+				
+			</div>
+			<div id="tab6" class="tab-content hide" style="display:none;">
+				<c:forEach items="${disciplineAs}" var="disciplineA">
+					<p><r:a href="/announcement/${disciplineA.id}">${disciplineA.name}</r:a></p>
+				</c:forEach>
+				
+			</div>
+			</div>
+		</div>
+		<div class="content_left">
+			<h2 class="title_h2"><span class="color_block"></span>我的辅导课程</h2>
+			<table class="main_data">
+				<thead>
+					<tr>
+						<th>课程名称</th>
+						<th>在修人数</th>
+						<th>课程代码</th>
+						<th>课程范围</th>
+						<th>必修/选修</th>
+
+					</tr>
+				</thead>
+				<tbody>
+					<c:forEach var="classCourseInfo" items="${classCourseInfomationList}" >
+						<tr>
+							<td>${classCourseInfo.learnCourse.name}</td>
+							<td>${classCourseInfo.userdCount}</td>
+							<td>${classCourseInfo.learnCourse.code}</td>
+							<td><fmt:message key="${classCourseInfo.learnCourse.learnRange}" /></td>
+							<td><fmt:message key="${classCourseInfo.learnCourse.learnShape}" /></td>
+						</tr>
+					</c:forEach>
+				</tbody>
+			
+			</table>
+		</div>
+		<div class="content_right">
+			<h2 class="title_h2"><span class="color_block"></span>我的工作完成情况</h2>
+			<table class="main_data">
+				<thead>
+					<tr>
+						<th>工作类型</th>
+						<th>待完成</th>
+						<th>已完成</th>
+						<th>总计</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>作业</td>
+						<td>${learnThesisWs.waitResolveCount}</td>
+						<td>${learnThesisWs.resolveCount}</td>
+						<td>${learnThesisWs.total}</td>
+					</tr>
+					<tr>
+						<td>问题</td>
+						<td>${questionWs.waitResolveCount}</td>
+						<td>${questionWs.resolveCount}</td>
+						<td>${questionWs.total}</td>
+					</tr>
+				
+				</tbody>
+			
+			</table>
+			</div>
+ </div>
+</r:layout>

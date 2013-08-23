@@ -1,0 +1,196 @@
+package com.boventech.gplearn.controller;
+
+import java.text.DecimalFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.boventech.gplearn.annotation.RequiredPrivilege;
+import com.boventech.gplearn.entity.Grade;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.LearnStatistics;
+import com.boventech.gplearn.entity.LearnThesisSubmit;
+import com.boventech.gplearn.entity.Privilege;
+import com.boventech.gplearn.entity.Question;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.LearnThesisSubmit.LearnThesisRating;
+import com.boventech.gplearn.service.GradeService;
+import com.boventech.gplearn.service.LearnClassService;
+import com.boventech.gplearn.service.LearnThesisSubmitInfomationService;
+import com.boventech.gplearn.service.QuestionService;
+import com.boventech.gplearn.service.SchoolRollService;
+
+@Controller
+@RequestMapping(value="/statistics")
+public class LearnStatisticController extends ApplicationController {
+
+	
+	@Autowired
+	private SchoolRollService schoolRollService;
+	
+	@Autowired
+	private LearnClassService learnClassService;
+	
+	@Autowired
+	private LearnThesisSubmitInfomationService learnThesisSubmitServie;
+	
+	@Autowired
+	private QuestionService questionService;
+	
+	@Autowired
+	private GradeService gradeService;
+	
+	/**
+	 * 老师查看“我的培训行为”
+	 * @param request
+	 * @param model
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.TEACHER_WORK_TOTAL})
+	@RequestMapping(value="/myteachinfo")
+	public String myteachInfo(HttpServletRequest request,Model model){
+		User user = (User)request.getSession().getAttribute("currentUser");
+		LearnStatistics learnStatistics= mockMyTeachInfo(user);
+		model.addAttribute("learnStatistics", learnStatistics);
+		return "role/teacher/myteachinfo";
+	}
+	
+	/**
+	 * 学生成绩表单
+	 * @return
+	 */
+	@RequiredPrivilege(value={Privilege.TEACHER_WORK_TOTAL})
+	@RequestMapping(value="/studentInfo")
+	public String studentInfoInClass(HttpServletRequest request,Model model,Integer page){
+		User user = (User)request.getSession().getAttribute("currentUser");
+		LearnClass learnClass = learnClassService.findByTeacher(user);
+		List<Grade> grades = gradeService.listWithPaginationByLearnClassId(learnClass.getId(),page);
+		for(int i =0;i<grades.size();i++){
+			mockDate(grades, i);
+		}
+		model.addAttribute("grades", grades);
+		model.addAttribute("learnClass",learnClass);
+		return "role/teacher/mystudentInfo";
+	}
+	
+	@RequestMapping(value="/learnclass/{learnClassId}")
+	public String classLearnStatistics(@PathVariable Long learnClassId){
+		return "";
+	}
+	
+	
+	/**
+	 * Mock 老师“我的培训”
+	 * @param user
+	 * @return
+	 */
+	private LearnStatistics mockMyTeachInfo(User user){
+		LearnStatistics learnstatistics = new LearnStatistics();
+		learnstatistics.setTeacher(user);
+		//mock online Time
+		Random random = new Random(new Date().getTime());
+		learnstatistics.setOnlineTimeCount(random.nextInt(50)+random.nextDouble());
+		//classMateInfo
+		//1.获取班级
+		LearnClass learnClass = learnClassService.findByTeacher(user);
+		List<User> usersInClass=schoolRollService.listActiveByLearnClass(learnClass);
+		//2.获取当前班级内人员信息
+		Integer totalClassMateCount = schoolRollService.findUsersByClass(learnClass).size();
+		Integer activeClassMateCount =usersInClass.size();
+		
+		learnstatistics.setClassMateInfo(activeClassMateCount+"/"+totalClassMateCount);
+		 
+		//mock Forum TopicTotal
+		random = new Random(new Date().getTime());
+		Integer forumTotal = random.nextInt(500);
+		//mock Forum ReplayTotal
+		Integer forumReplies=random.nextInt(1000);
+		//mock Forum goodTopicTotal
+		Integer forumGoodTopic = random.nextInt(forumTotal);
+		
+		learnstatistics.setForumTopicInfo(forumTotal+"/"+forumReplies+"/"+forumGoodTopic);
+		
+		//learnThesis Info
+		//1.获取所有提交数量
+		Integer learnThesisMarkingGoodCount=0;
+		Integer learnThesisMarkingCount = 0;
+		Integer learnThesisTotalCount = 0;
+		for(User classMate : usersInClass){
+			List<LearnThesisSubmit> learnThesisSubmits=learnThesisSubmitServie.listActiveInfoByStudentUser(classMate);
+			for(LearnThesisSubmit learnThesisSubmit : learnThesisSubmits){
+				learnThesisTotalCount++;
+				if(null!=learnThesisSubmit.getMakingDate()){
+					learnThesisMarkingCount++;
+				}
+				if(null!=learnThesisSubmit.getLearnThesisRating() && 
+							learnThesisSubmit.getLearnThesisRating().equals(LearnThesisRating.VERYGOOD))	
+					learnThesisMarkingGoodCount++;
+			}
+		}
+		learnstatistics.setLearnThesisInfo(learnThesisTotalCount+"/"+learnThesisMarkingCount+"/"+learnThesisMarkingGoodCount);
+		
+		//Question Mock
+		//获取当前班级的所有question
+		List<Question> questions = questionService.listByLearnClass(learnClass);
+		Integer questionsInClassTotalCount=questions.size();
+		Integer questionResolveCount = 0;
+		Integer questionUnResolveCount = 0;
+		
+		for(Question question : questions){
+			if(question.isResolved()){
+				questionResolveCount++;
+				continue;
+			}
+			questionUnResolveCount++;
+		}
+		learnstatistics.setQuestionInfo(questionsInClassTotalCount+"/"+questionResolveCount+"/"+questionUnResolveCount);
+		
+		return learnstatistics;
+	}
+	
+	
+	private void mockDate(List<Grade> gradesList, int i) {
+		Random rand;
+		Grade grade = gradesList.get(i);
+		Double mockDate =null;
+		DecimalFormat format=new DecimalFormat("0.00");
+		//mock 研修讨论分数
+		rand=new Random(new Date().getTime());
+		Double score=grade.getScoringStandard().getLearnDiscussProportion()*100;
+		Integer mock=rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate=mock+rand.nextDouble();
+		grade.setLearnDiscussScore(Double.valueOf(format.format(mockDate)));
+		//mock 视频分数
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getLearnVideoProportion()*100;
+		mock = rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate = mock+rand.nextDouble();
+		grade.setLearnVideoScore(Double.valueOf(format.format(mockDate)));
+		//mock 研修论文
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getLearnThesisProportion()*100;
+		mock=rand.nextInt(score.intValue())-1;
+		mock  = mock-1>=0?mock:0;
+		mockDate = mock+rand.nextDouble();
+		grade.setLearnThesisScore(Double.valueOf(format.format(mockDate)));
+		//mock 平时成绩
+		rand=new Random(new Date().getTime());
+		score=grade.getScoringStandard().getUsuallyProportion()*100;
+		mock=rand.nextInt(score.intValue())-1;
+		mock=mock-1>=0?mock:0;
+		mockDate=mock+rand.nextDouble();
+		grade.setUsuallyScore(Double.valueOf(format.format(mockDate)));
+		gradesList.set(i, grade);
+		gradeService.update(grade);
+	}
+}

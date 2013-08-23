@@ -1,0 +1,86 @@
+package com.boventech.gplearn.service.impl;
+
+import java.util.Date;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.ReceiverNotificationDao;
+import com.boventech.gplearn.dao.SenderNotificationDao;
+import com.boventech.gplearn.dao.UserDao;
+import com.boventech.gplearn.entity.ReceiverNotification;
+import com.boventech.gplearn.entity.SenderNotification;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.SenderNotificationService;
+import com.google.common.collect.Lists;
+
+@Service
+@Transactional
+public class SenderNotificationServiceImpl implements SenderNotificationService {
+
+	@Autowired
+	private SenderNotificationDao senderNotificationDao;
+	
+	@Autowired
+	private UserDao userDao;
+	
+	@Autowired
+	private ReceiverNotificationDao receiverNotificationDao;
+
+	@Override
+	public void save(SenderNotification t) {
+		this.senderNotificationDao.save(t);
+	}
+
+	@Override
+	public void delete(SenderNotification t) {
+		this.senderNotificationDao.delete(t);
+	}
+
+	@Override
+	public void delete(Long id) {
+		this.senderNotificationDao.deleteById(id);
+	}
+
+	@Override
+	public void update(SenderNotification t) {
+		this.senderNotificationDao.update(t);
+	}
+
+	@Override
+	public SenderNotification findById(Long id) {
+		return this.senderNotificationDao.findByID(id);
+	}
+
+	@Override
+	public void sendNotification(SenderNotification senderNotification) {
+		List<ReceiverNotification> receiverNotifications = getReceiverNotifications(senderNotification);
+		this.senderNotificationDao.save(senderNotification);
+		this.receiverNotificationDao.save(receiverNotifications);
+
+	}
+	
+	private List<ReceiverNotification> getReceiverNotifications(SenderNotification senderNotification) {
+		List<ReceiverNotification> receiverNotifications=Lists.newArrayList();
+		for (User receiver : senderNotification.getReceivers()) {
+			ReceiverNotification receiverNotification = new ReceiverNotification();
+			receiverNotification.setConsult(false);
+			receiverNotification.setDetails(senderNotification.getDetails());
+			receiverNotification.setMessage(senderNotification.getMessage());
+			receiverNotification.setSender(senderNotification.getSender());
+			receiverNotification.setReceiver(receiver);
+			receiverNotification.setTime(new Date());
+			receiverNotifications.add(receiverNotification);
+		}
+		return receiverNotifications;
+	}
+
+	@Override
+	public List<SenderNotification> listAllNotificationByUser(User user,
+			Integer page) {
+		return this.senderNotificationDao.listAllNotificationByUser(user, page);
+	}
+
+}

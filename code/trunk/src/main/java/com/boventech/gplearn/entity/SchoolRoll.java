@@ -1,0 +1,120 @@
+package com.boventech.gplearn.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+/**
+ * 学籍模型
+ * 
+ *
+ */
+@Entity
+@Table(name="schoolroll")
+public class SchoolRoll implements Serializable {
+
+	private static final long serialVersionUID = 4181668803588435851L;
+
+	
+    public SchoolRoll() {
+        super();
+        setCreateDate(new Date());
+    }
+
+    public enum SchoolRollType{
+		NORMAL,//学习
+		OVER,//结束学习
+		REST,//中断学习
+		DEAD //死亡中断学习
+	}
+	
+	//编号
+	@Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+	private Long id;
+	
+	//平台学员
+	@ManyToOne(cascade=CascadeType.REFRESH)
+	@JoinColumn(name="user_id")
+	private User user;
+	
+	//班级
+	@ManyToOne
+	@JoinColumn(name="learnClass_id")
+	private LearnClass learnClass;
+	
+	//学籍类型
+	@Enumerated(EnumType.STRING)
+	private SchoolRollType schoolRollType;
+	
+	@Column(nullable=false)
+	@Temporal(TemporalType.DATE)
+	private Date createDate;
+	
+	//是否最新记录
+	private boolean newest;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public User getUser() {
+		return user;
+	}
+
+	public void setUser(User user) {
+		this.user = user;
+	}
+
+	public LearnClass getLearnClass() {
+		return learnClass;
+	}
+
+	public void setLearnClass(LearnClass learnClass) {
+		this.learnClass = learnClass;
+	}
+
+	public SchoolRollType getSchoolRollType() {
+		return schoolRollType;
+	}
+
+	public void setSchoolRollType(SchoolRollType schoolRollType) {
+		this.schoolRollType = schoolRollType;
+	}
+
+	public boolean isNewest() {
+		return newest;
+	}
+
+	public void setNewest(boolean newest) {
+		this.newest = newest;
+	}
+
+	public Date getCreateDate() {
+		return createDate;
+	}
+
+	public void setCreateDate(Date createDate) {
+		this.createDate = createDate;
+	}
+	
+	
+	
+}

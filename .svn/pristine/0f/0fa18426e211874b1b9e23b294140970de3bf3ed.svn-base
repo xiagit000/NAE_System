@@ -1,0 +1,90 @@
+var urls=[];
+var titles=[];
+var ids=[];
+var linkMen="";
+
+$(function() {
+	
+	jQuery.validator.messages.required =
+		"<span class='error' generated='true' style='color: red; font-size: 12px;'>*请填写此内容</span>";
+
+	$("#add_form").validate({
+		rules : {
+			receiver : {required : true},
+			message : {required : true},
+			details : {required : true},
+		}
+	});
+	
+	$("#tabs").tabs();
+	$("#receivers").val("");
+	$("#ids").val("");
+	
+	setParms("user/getUsers/supervisor","督导员");
+	setParms("user/getUsers/specialists","专家组");
+	setParms("user/getUsers/teacher","老师");
+	setParms("user/getUsers/student","学生");
+	generateLinkMenDate();
+});
+
+function generateLinkMenDate(){
+	var url=contextPath+urls.pop();
+	var according="";
+	$.post(url,function(result){
+		if(result.length>0){
+			according+="<h3>"+titles.pop()+"</h3><div>";
+				for(var i=0;i<result.length;i++){
+					according+="<a href='javascript:' " +
+							"onclick=setLinkMen('"+result[i].realName+"',"+result[i].id+")>"+
+							result[i].realName+"<font color='blue'>["+
+							result[i].loginName+"]</font></a><br>";
+				}
+		   according+="</div>";
+		}else{
+			according+="<h3>"+titles.pop()+"</h3><div><p>无数据</p></div>";
+		}
+	}).success(function() { 
+		$("#linkman").append(according);
+		generateLinkMenDate();
+	}).error(function(){
+		$("#linkman").accordion({
+			heightStyle : "fill"
+		});
+	});
+}
+
+function setParms(url,title){
+	urls.push(url);
+	titles.push(title);
+}
+
+function setLinkMen(name,id){
+	if(checkExist(id)){
+	$("#receivers").attr("readonly","readonly");
+	$("#clearLinkMen").show();
+	
+	linkMen+=name+";";
+	var ids=$("#ids").val();
+	$("#receivers").val(linkMen);
+	$("#ids").val(ids+id+";");
+	}
+}
+
+function clearLinkMen(){
+	$("#receivers").removeAttr("readonly");
+	$("#receivers").val("");
+	$("#ids").val("");
+	$("#clearLinkMen").hide();
+	linkMen="";
+	ids=[];
+}
+
+function checkExist(id){
+	for(var i=0;i<ids.length;i++){
+		if(ids[i]==id){
+			return false;
+		}
+	}
+	ids.push(id);
+	return true;
+}

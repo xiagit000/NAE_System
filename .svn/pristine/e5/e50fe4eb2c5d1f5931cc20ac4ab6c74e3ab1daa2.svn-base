@@ -1,0 +1,79 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.GraduateStandardDao;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.GraduateStandard;
+import com.boventech.gplearn.service.GraduateStandardService;
+
+@Service
+@Transactional
+public class GraduateStandardServiceImpl implements GraduateStandardService{
+
+    @Autowired
+    private GraduateStandardDao graduateDao;
+    
+    @Override
+    public void save(GraduateStandard t) {
+        this.graduateDao.save(t);
+    }
+
+    @Override
+    public void delete(GraduateStandard t) {
+        this.graduateDao.delete(t);
+    }
+
+    @Override
+    public void delete(Long id) {
+        this.graduateDao.deleteById(id);
+    }
+
+    @Override
+    public void update(GraduateStandard t) {
+        this.graduateDao.update(t);
+    }
+
+    @Override
+    public GraduateStandard findById(Long id) {
+        return this.graduateDao.findByID(id);
+    }
+
+    @Override
+    public boolean checkeExist() {
+        return this.graduateDao.checkeExist();
+    }
+
+    @Override
+    public List<GraduateStandard> listAll() {
+        return this.graduateDao.listAllWithoutPagnate();
+    }
+
+    @Override
+    public boolean checkeExistByBatch(Batch batch) {
+        return this.graduateDao.checkeExistByBatch(batch);
+    }
+
+	@Override
+	public GraduateStandard getCurrentBatchGraduateStandard(Batch currentBatch) {
+		return this.graduateDao.getCurrentBatchGraduateStandard(currentBatch);
+	}
+
+}

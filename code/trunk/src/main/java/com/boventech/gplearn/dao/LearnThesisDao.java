@@ -1,0 +1,23 @@
+package com.boventech.gplearn.dao;
+
+import java.util.Date;
+import java.util.List;
+
+import com.boventech.gplearn.entity.BigSubject;
+import com.boventech.gplearn.entity.LearnThesis;
+
+public interface LearnThesisDao extends BaseDao<com.boventech.gplearn.entity.LearnThesis, Long> {
+
+	List<LearnThesis> listWithPagination(Integer page);
+
+
+	List<LearnThesis> listEnableThesisByBigSubject(BigSubject bigSubject,
+			Date date);
+
+
+	List<LearnThesis> listOverThesisByBigSubject(BigSubject bigsubject,
+			Date date);
+
+
+	List<LearnThesis> listByBigSubjet(BigSubject bigsubject);
+}

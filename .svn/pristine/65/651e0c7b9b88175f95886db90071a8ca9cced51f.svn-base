@@ -1,0 +1,16 @@
+package com.boventech.gplearn.exception;
+
+public class UserInfoPushToStudySpaceClassRoomFaildException extends Exception {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5481976836958952380L;
+
+	@Override
+	public String getMessage() {
+		return "***************UserInfoPushToStudySpaceClassRoomFaildException****************";
+	}
+
+	
+}

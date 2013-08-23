@@ -1,0 +1,188 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service.impl;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.SchoolSpaceDao;
+import com.boventech.gplearn.entity.Account;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.SchoolSpace;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.exception.UserInfoPushToStudySpaceFaildException;
+import com.boventech.gplearn.exception.UserInfoSendCASFaildException;
+import com.boventech.gplearn.service.BatchService;
+import com.boventech.gplearn.service.SchoolSpaceService;
+import com.boventech.gplearn.service.UserService;
+import com.boventech.gplearn.util.CASPlatformHttpClient;
+import com.boventech.gplearn.util.StudyPlatformHttpClient;
+
+@Service
+@Transactional
+public class SchoolSpaceServiceImpl implements SchoolSpaceService{
+    
+    @Autowired
+    private SchoolSpaceDao schoolSpaceDao;
+    
+    @Autowired
+    private BatchService batchService;
+    
+    @Autowired
+    private UserService userService;
+
+    @Override
+    public List<SchoolSpace> generateSchoolSpaces(List<Account> accounts, EnrollmentPlan enrollmentPlan) {
+        Set<String> schools=new HashSet<String>();
+        List<SchoolSpace> schoolSpaces=new ArrayList<SchoolSpace>();
+        Batch batch = batchService.getCurrentBatch();
+        for (Account account : accounts) {
+            schools.add(account.getSchool());
+        }
+        for (String school : schools) {
+            if(!this.schoolSpaceDao.checkExistBySchoolNameAndBatch(school,batch)){
+            SchoolSpace schoolSpace=new SchoolSpace();
+            schoolSpace.setSchoolName(school);
+            schoolSpace.setBatch(enrollmentPlan.getBatch());
+            schoolSpaces.add(schoolSpace);
+            }else{
+            	SchoolSpace temp =schoolSpaceDao.findBySchoolNameAndBatch(school, batch);
+            	schoolSpaces.add(temp);
+            }
+        }
+        return schoolSpaces;
+    }
+
+    @Override
+    public void save(SchoolSpace t) {
+        this.schoolSpaceDao.save(t);
+    }
+
+    @Override
+    public void delete(SchoolSpace t) {
+        this.schoolSpaceDao.delete(t);
+    }
+
+    @Override
+    public void delete(Long id) {
+        this.schoolSpaceDao.deleteById(id);
+    }
+
+    @Override
+    public void update(SchoolSpace t) {
+        this.schoolSpaceDao.update(t);
+    }
+
+    @Override
+    public SchoolSpace findById(Long id) {
+        return this.schoolSpaceDao.findByID(id);
+    }
+
+    @Override
+    public void save(List<SchoolSpace> schoolSpaces) {
+    	for (int i = 0; i < schoolSpaces.size(); i++) {
+    		if(null!=schoolSpaces.get(i).getId()){
+    			continue;
+    		}
+    		schoolSpaceDao.save(schoolSpaces.get(i));
+		}
+    }
+
+  
+
+	@Override
+	public List<SchoolSpace> listByUncreate() {
+		return this.schoolSpaceDao.listByUncreate();
+	}
+
+	
+
+	@Override
+	public List<SchoolSpace> listWithPaginationOfCurrentBatch(Integer page,
+			Batch batch) {
+		return this.schoolSpaceDao.listWithPaginationOfCurrentBatch(page, batch);
+	}
+
+	@Override
+	public List<SchoolSpace> listWithPagination(Integer page) {
+		return this.schoolSpaceDao.listWithPagination(page);
+	}
+
+	@Transactional(rollbackFor={UserInfoSendCASFaildException.class,UserInfoPushToStudySpaceFaildException.class})
+	@Override
+	public void saveSchooSpaceUser(SchoolSpace schoolSpace, User user) throws UserInfoSendCASFaildException, UserInfoPushToStudySpaceFaildException {
+		userService.save(user);
+		User savedUser = userService.findByLoginName(user.getLoginName());
+		//保存校区管理员信息
+		schoolSpace.setUser(savedUser);
+		update(schoolSpace);
+		//将用户push到CAS
+		sendUserToCAS(schoolSpace.getUser());
+		//将管理员push到SchoolSpace
+		sendUserToSchoolSpace(savedUser,schoolSpace);
+		
+	}
+	
+	private void sendUserToSchoolSpace(User savedUser,SchoolSpace schoolSpace) throws UserInfoPushToStudySpaceFaildException {
+		StudyPlatformHttpClient client = new StudyPlatformHttpClient();
+		Integer statusCode=client.createUserToSchoolpace(savedUser,schoolSpace);
+		if(statusCode!=200 && statusCode!=409){
+			throw new UserInfoPushToStudySpaceFaildException();
+		}
+	}
+
+	private void sendUserToCAS(User user) throws UserInfoSendCASFaildException{
+		CASPlatformHttpClient client = new CASPlatformHttpClient();
+		Integer statuCode =client.createUserToCAS(user);
+		if(statuCode !=200 && statuCode!=409){
+			throw new UserInfoSendCASFaildException();
+		}
+	}
+
+	@Override
+	public boolean checkExsitBySchoolNameAndBatch(String schoolName, Batch batch) {
+		return this.schoolSpaceDao.checkExistBySchoolNameAndBatch(schoolName, batch);
+	}
+
+	@Override
+	public SchoolSpace findBySchoolNameAndBatch(String schoolName, Batch batch) {
+		return this.schoolSpaceDao.findBySchoolNameAndBatch(schoolName, batch);
+	}
+
+	@Override
+	public SchoolSpace findByPersonIncharge(User currentUser) {
+		return this.schoolSpaceDao.findByPersonIncharge(currentUser);
+	}
+
+	@Override
+	public List<SchoolSpace> listWithCurrentBatch(Batch currentBatch) {
+		
+		return this.schoolSpaceDao.listWithCurrentBatch(currentBatch);
+	}
+
+	@Override
+	public List<SchoolSpace> listAll() {
+		return schoolSpaceDao.listAll();
+	}
+
+	
+
+}

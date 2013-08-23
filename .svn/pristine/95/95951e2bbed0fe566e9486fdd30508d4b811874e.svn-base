@@ -1,0 +1,20 @@
+
+
+
+	$(".header_list").find("a").click(function(){
+		$(".header_list a").removeClass("list_current");
+		$(this).addClass("list_current");
+		return false;
+	});
+
+	$(".content-box-tabs").find("a").click(function(){
+		$("[data-tab]").removeClass("curr-tab");
+		$(this).addClass("curr-tab");
+		$(".tab-content").hide();
+		$($(this).attr("data-tab")).show();
+		return false;
+	});
+	})
+	
+	
+

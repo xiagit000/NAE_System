@@ -1,0 +1,162 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Repository;
+import com.boventech.gplearn.dao.UserDao;
+import com.boventech.gplearn.entity.Account;
+import com.boventech.gplearn.entity.Batch;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.entity.User.UserType;
+import com.google.common.collect.Lists;
+
+@Repository
+public class UserDaoImpl extends BaseDaoImpl<User, Long> implements UserDao {
+
+    @Override
+    public Long getMaxIndex() {
+        return (Long) executeQuery("select MAX(id) from User").get(0);
+    }
+
+    @Override
+    public void save(List<User> users) {
+        int i = 0;
+        for (User user : users) {
+            user.setLoginName(user.getLoginName() + getIndex());
+            save(user);
+            if (i % 30 == 0) {
+                flush();
+            }
+        }
+    }
+
+    @Override
+    public boolean isExistByIdNumberAndBatch(String idNumber, Batch batch) {
+        String queryString = "from User u where u.account.idNumber=?1 and u.batch=?2";
+        return !executeQueryWithoutPaging(queryString, idNumber, batch).isEmpty();
+    }
+
+    private String getIndex() {
+        String max = "";
+        if (null == getMaxIndex()) {
+            max = "1";
+        } else {
+            max = String.valueOf(getMaxIndex() + 1);
+        }
+        String index = "0000" + max;
+        return index.substring(index.length() - 4, index.length());
+    }
+
+    @Override
+    public List<User> listAllWithPagnate(Integer page) {
+        return executeQueryWithPagination("from User", null, page);
+    }
+
+    @Override
+    public List<User> listAllWithoutPagnate() {
+        return executeQueryWithoutPaging("from User");
+    }
+
+    @Override
+    public boolean checkEntityExsitByLoginName(String loginName) {
+        String queryString = "FROM User u WHERE u.loginName=?1";
+        return !executeQueryWithoutPaging(queryString, loginName).isEmpty();
+    }
+
+    @Override
+    public User findByLoginName(String loginName) {
+        String queryString = "FROM User u WHERE u.loginName=?1";
+        List<User> users = executeQueryWithoutPaging(queryString, loginName);
+        return users.isEmpty() ? null : users.get(0);
+    }
+
+    @Override
+    public List<User> listSerchWithPagnate(Integer page, User user, Account account, Batch batch,
+            LearnClass learnClass) {
+        StringBuilder builder = new StringBuilder("FROM User u where  1=1");
+        List<Object> list = Lists.newArrayList();
+        if (batch != null) {
+            builder.append(" and u.batch=? ");
+            list.add(batch);
+        }
+        if (user.getUserType() != null && !"".equals(user.getUserType())) {
+            builder.append(" and u.userType=? ");
+            list.add(user.getUserType());
+        }
+        if (account.getName() != null && !"".equals(account.getName())) {
+            builder.append(" and u.account.name like ? ");
+            list.add("%" + account.getName() + "%");
+        }
+        if (account.getIdType() != null && !"".equals(account.getIdType())) {
+            builder.append(" and u.account.idType =? ");
+            list.add(account.getIdType());
+        }
+        if (account.getIdNumber() != null && !"".equals(account.getIdNumber())) {
+            builder.append(" and u.account.idNumber like ? ");
+            list.add("%" + account.getIdNumber() + "%");
+        }
+        if (learnClass != null) {
+            builder.append(" and u.id in (select s.user.id from SchoolRoll s ");
+            builder.append(" where s.learnClass =? ");
+            builder.append(")");
+            list.add(learnClass);
+        }
+        String queryString = builder.toString();
+        return executeQueryWithPagination(queryString, null, page, list.toArray());
+    }
+
+    @Override
+    public List<User> listSerchWithoutPagnate(User user, Account account, Batch batch, LearnClass learnClass) {
+        StringBuilder builder = new StringBuilder("FROM User u where  1=1");
+        List<Object> list = Lists.newArrayList();
+        if (batch != null) {
+            builder.append(" and u.batch=? ");
+            list.add(batch);
+        }
+        if (user.getUserType() != null && !"".equals(user.getUserType())) {
+            builder.append(" and u.userType=? ");
+            list.add(user.getUserType());
+        }
+        if (account.getName() != null && !"".equals(account.getName())) {
+            builder.append(" and u.account.name like ? ");
+            list.add("%" + account.getName() + "%");
+        }
+        if (account.getIdType() != null && !"".equals(account.getIdType())) {
+            builder.append(" and u.account.idType =? ");
+            list.add(account.getIdType());
+        }
+        if (account.getIdNumber() != null && !"".equals(account.getIdNumber())) {
+            builder.append(" and u.account.idNumber like ? ");
+            list.add("%" + account.getIdNumber() + "%");
+        }
+        if (learnClass != null) {
+            builder.append(" and u.id in (select s.user.id from SchoolRoll s ");
+            builder.append(" where s.learnClass =? ");
+            builder.append(")");
+            list.add(learnClass);
+        }
+        String queryString = builder.toString();
+        return executeQueryWithoutPaging(queryString, list.toArray());
+    }
+
+    @Override
+    public User findByUserType(UserType userType) {
+        String queryString = "FROM User WHERE userType = ?1";
+        return executeQueryWithoutPaging(queryString, userType).get(0);
+    }
+
+}

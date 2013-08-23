@@ -1,0 +1,51 @@
+package com.boventech.gplearn.dao.impl;
+
+import java.util.List;
+
+import com.boventech.gplearn.dao.SchoolRollDao;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.SchoolRoll;
+import com.boventech.gplearn.entity.User;
+
+public class SchoolRollDaoImpl extends BaseDaoImpl<SchoolRoll,Long> implements
+		SchoolRollDao {
+
+	private static final String DEFAULT_ORDER=" ORDER BY sr.id DESC";
+	
+	
+	@Override
+	public List<SchoolRoll> listActiveSchoolRoll(Integer page) {
+		String queryString = "FROM SchoolRoll sr WHERE sr.isNewest=?1";
+		return executeQueryWithPagination(queryString, DEFAULT_ORDER, page, true);
+	}
+
+
+	@Override
+	public List<SchoolRoll> listAllInformationByUserId(Long userId) {
+		String queryString = "FROM SchoolRoll sr WHERE sr.user.id=?1";
+		return executeQueryWithoutPaging(queryString, userId);
+	}
+
+
+    @Override
+    public Integer countByLearnClass(LearnClass learnClass) {
+        return executeCountQuery("from SchoolRoll where learnClass=?1", learnClass);
+    }
+
+
+    @Override
+    public List<SchoolRoll> findByUser(User user) {
+        return executeQueryWithoutPaging("from SchoolRoll s where s.user=?1", user);
+    }
+
+
+	@Override
+	public SchoolRoll findByUserNewest(User user) {
+		String queryString =  "FROM SchoolRoll sr WHERE sr.user=?1 AND sr.isNewest=?2";
+		List<SchoolRoll> list = executeQueryWithoutPaging(queryString, user,true);
+		return list.isEmpty()?null:list.get(0);
+	}
+    
+    
+
+}

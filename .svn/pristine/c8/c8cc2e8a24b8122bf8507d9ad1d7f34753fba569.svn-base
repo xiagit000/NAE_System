@@ -1,0 +1,150 @@
+package com.boventech.gplearn.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.BigSubject;
+import com.boventech.gplearn.entity.SmallTopic;
+import com.boventech.gplearn.service.BigSubjectService;
+import com.boventech.gplearn.service.SmallTopicService;
+
+@Controller
+@RequestMapping(value="/bigsubject/{bsid}/smalltopic")
+public class SmallTopicController extends ApplicationController {
+
+	
+	@Autowired
+	private BigSubjectService bigSubjectService;
+	
+	@Autowired
+	private SmallTopicService smallTopicService;
+	
+	@RequestMapping
+	public String index(@PathVariable Long bsid,Model model,RedirectAttributes redirectAttr,Integer page){
+		BigSubject bigSubject = bigSubjectService.findById(bsid);
+		if(null == bigSubject){
+			sendErrorMessageWhenRedirect(redirectAttr, "bigsubject.null");
+			return "redirect:/bigsubject";
+		}
+		List<SmallTopic> list = smallTopicService.listByBigSubjectIdWithPagination(bsid, page);
+		model.addAttribute("list", list);
+		model.addAttribute("bigSubject", bigSubject);
+		return "bigsubject/smalltopic/index";
+	}
+	
+	@RequestMapping(value="/create")
+	public String create(@PathVariable Long bsid,RedirectAttributes redirectAttr,Model model){
+		BigSubject bigSubject = bigSubjectService.findById(bsid);
+		if(null == bigSubject){
+			sendErrorMessageWhenRedirect(redirectAttr, "bigsubject.null");
+			return "redirect:/bigsubject";
+		}
+		model.addAttribute("bigSubject", bigSubject);
+		return "bigsubject/smalltopic/create";
+	}
+	
+	@RequestMapping(method=RequestMethod.POST)
+	public String save(@PathVariable Long bsid,SmallTopic smallTopic,RedirectAttributes redirectAttr,Model model){
+		BigSubject bigSubject = bigSubjectService.findById(bsid);
+		if(null == bigSubject){
+			sendErrorMessageWhenRedirect(redirectAttr, "bigsubject.null");
+			return "redirect:/bigsubject";
+		}
+		smallTopic.setBelongBigSubject(bigSubject);
+		if(!smallTopicService.isEmptyByTitleAndSubjectId(bsid, smallTopic.getTitle())){
+			sendErrorMessageWithParameter(model, "common.name.exsit",smallTopic.getTitle());
+			model.addAttribute("bigSubject", bigSubject);
+			return "/bigsubject/smalltopic/create";
+		}
+		
+		smallTopicService.save(smallTopic);
+		sendNoticeWhenRedirect(redirectAttr, "common.add.success");
+		return "redirect:/bigsubject/"+bsid+"/smalltopic";
+		/**
+		 * TODO 将指定大主题下新创建的小课题内容推送到学习平台
+		 */
+	}
+	
+	@RequestMapping(value="/{id}/update")
+	public String edit(@PathVariable long bsid,@PathVariable Long id,Model model ,RedirectAttributes redirectAttr){
+		BigSubject bigSubject = bigSubjectService.findById(bsid);
+		if(null == bigSubject){
+			sendErrorMessageWhenRedirect(redirectAttr, "bigsubject.null");
+			return "redirect:/bigsubject";
+		}
+		SmallTopic smallTopic = smallTopicService.findByBigSubjectIdAndId(bsid, id);
+		if(null == smallTopic){
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr, "common.obj.notfound","id:"+id);
+			return "redirect:/bigsubject/"+bsid+"/smalltopic";
+		}
+		model.addAttribute("smallTopic", smallTopic);
+		return "bigsubject/smalltopic/edit";
+	}
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.PUT)
+	public String update(SmallTopic smallTopic,@PathVariable Long bsid,@PathVariable Long id,Model model,RedirectAttributes redirectAttr){
+		BigSubject bigSubject = bigSubjectService.findById(bsid);
+		if(null == bigSubject){
+			sendErrorMessageWhenRedirect(redirectAttr, "bigsubject.null");
+			return "redirect:/bigsubject";
+		}
+		SmallTopic oldsmallTopic = smallTopicService.findByBigSubjectIdAndId(bsid, id);
+		if(null == oldsmallTopic){
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr, "common.obj.notfound","id:"+id);
+			return "redirect:/bigsubject/"+bsid+"/smalltopic";
+		}
+		smallTopic.setBelongBigSubject(bigSubject);
+		smallTopic.setId(id);
+		smallTopicService.update(smallTopic);
+		sendNoticeWhenRedirect(redirectAttr, "common.success.success");
+		/**
+		 * TODO 修改后将新的小课题标题内容推送给学习平台
+		 */
+		return "redirect:/bigsubject/"+bsid+"/smalltopic/";
+	}
+	
+	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
+	public String destroy(@PathVariable Long bsid,@PathVariable Long id,RedirectAttributes redirectAttr){
+		BigSubject bigSubject = bigSubjectService.findById(bsid);
+		if(null == bigSubject){
+			sendErrorMessageWhenRedirect(redirectAttr, "bigsubject.null");
+			return "redirect:/bigsubject";
+		}
+		SmallTopic smallTopic = smallTopicService.findByBigSubjectIdAndId(bsid, id);
+		if(null == smallTopic){
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr, "common.obj.notfound","id:"+id);
+			return "redirect:/bigsubject/"+bsid+"/smalltopic";
+		}
+		smallTopicService.delete(id);
+		sendNoticeWhenRedirect(redirectAttr, "common.destroy.success");
+		/**
+		 * TODO 删除后将删除的小课题信息推送给学习平台
+		 */
+		return "redirect:/bigsubject/"+bsid+"/smalltopic";
+	}
+	
+	
+	@RequestMapping(value="/{id}")
+	public String show(@PathVariable Long bsid,@PathVariable Long id,Model model,RedirectAttributes redirectAttr){
+		BigSubject bigSubject = bigSubjectService.findById(bsid);
+		if(null == bigSubject){
+			sendErrorMessageWhenRedirect(redirectAttr, "bigsubject.null");
+			return "redirect:/bigsubject";
+		}
+		SmallTopic smallTopic = smallTopicService.findByBigSubjectIdAndId(bsid, id);
+		if(null == smallTopic){
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr, "common.obj.notfound","id:"+id);
+			return "redirect:/bigsubject/"+bsid+"/smalltopic";
+		}
+		model.addAttribute("smallTopic", smallTopic);
+		return "bigsubject/smalltopic/show";
+	}
+	
+}

@@ -1,0 +1,195 @@
+package com.boventech.gplearn.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.LearnSpeacialty;
+import com.boventech.gplearn.service.DisciplineService;
+import com.boventech.gplearn.service.LearnSpeacialtyService;
+
+/**
+ * 培训专业控制器
+ */
+@Controller
+@RequestMapping(value = "/learnspeacialty")
+public class LearnSpeacialtyController extends ApplicationController {
+
+	@Autowired
+	private LearnSpeacialtyService learnSpeacialtyService;
+
+	@Autowired
+	private DisciplineService disciplineService;
+
+	/**
+	 * List
+	 * 
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.GET)
+	public String index(Model model, Integer page) {
+		List<LearnSpeacialty> list = learnSpeacialtyService
+				.listWithPagination(page);
+		model.addAttribute("list", list);
+		return "learnspeacialty/index";
+
+	}
+
+	/**
+	 * Jump To Create Page
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/create")
+	public String create() {
+		return "learnspeacialty/create";
+	}
+
+	/**
+	 * Save
+	 * 
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.POST)
+	public String save(LearnSpeacialty learnSpeacialty,
+			final RedirectAttributes redirectAttrs, Model model) {
+		if (learnSpeacialtyService.checkExsit(learnSpeacialty.getName())) {
+			sendErrorMessageWithParameter(model, "common.name.exsit",
+					learnSpeacialty.getName());
+			model.addAttribute("learnSpeacialty", learnSpeacialty);
+			return "learnspeacialty/create";
+		}
+		learnSpeacialtyService.save(learnSpeacialty);
+		sendNoticeWhenRedirect(redirectAttrs, "common.add.success");
+		return "redirect:/learnspeacialty";
+	}
+
+	/**
+	 * Jump To Edit Page
+	 * 
+	 * @param id
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping(value = "/{id}/update")
+	public String edit(@PathVariable Long id, Model model,
+			RedirectAttributes redirectAttr) {
+		LearnSpeacialty learnSpeacialty = learnSpeacialtyService.findById(id);
+		if (null == learnSpeacialty) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttr,
+					"common.obj.notfound", "Id:" + id);
+			return "redirect:/learnspeacialty";
+		}
+		model.addAttribute("learnSpeacialty", learnSpeacialty);
+		return "learnspeacialty/update";
+	}
+
+	/**
+	 * Update LearnSpeacialty By Id
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/{id}", method = RequestMethod.PUT)
+	public String update(LearnSpeacialty learnSpeacialty,
+			final RedirectAttributes redirectAttrs, Model model) {
+
+		if (learnSpeacialtyService.checkExsitWithOutCurrent(learnSpeacialty)) {
+			sendErrorMessageWithParameter(model, "common.name.exsit",
+					learnSpeacialty.getName());
+			model.addAttribute("learnSpeacialty", learnSpeacialty);
+			return "learnspeacialty/update";
+		}
+		learnSpeacialtyService.update(learnSpeacialty);
+		sendNoticeWhenRedirect(redirectAttrs, "common.update.success");
+		return "redirect:/learnspeacialty";
+	}
+
+	/**
+	 * Delete LearnSpeacialty By Id
+	 * 
+	 * @param id
+	 * @param redirectAttrs
+	 * @return
+	 */
+	@RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+	public String destroy(@PathVariable Long id,
+			RedirectAttributes redirectAttrs) {
+		LearnSpeacialty learnSpeacialty = learnSpeacialtyService.findById(id);
+		if (null == learnSpeacialty) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttrs,
+					"common.obj.notfound", "Id:" + id);
+			return "redirect:/learnspeacialty";
+		}
+		try {
+			learnSpeacialtyService.delete(id);
+			sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+		} catch (RuntimeException e) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttrs,
+					"common.reference.delete", learnSpeacialty.getName());
+		}
+		return "redirect:/learnspeacialty";
+	}
+
+	/**
+	 * Set LearnSpeacialty Disabled
+	 * 
+	 * @return
+	 */
+	@RequestMapping(value = "/{id}/disabled")
+	public String disabled(@PathVariable Long id,
+			final RedirectAttributes redirectAttrs, Model model) {
+		LearnSpeacialty learnSpeacialty = learnSpeacialtyService.findById(id);
+		// 是否存在
+		if (null == learnSpeacialty) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttrs,
+					"common.obj.notfound", "Id:" + id);
+			return "redirect:/learnspeacialty";
+		}
+		// 查看禁用的专业是否被引用了
+		if (disciplineService.checkExsitByLearnSpeacialtyId(learnSpeacialty
+				.getId())) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttrs,
+					"common.rederence.disabled.faild", learnSpeacialty
+							.getName());
+			return "redirect:/learnspeacialty";
+		}
+
+		learnSpeacialty.setActive(false);
+		learnSpeacialtyService.update(learnSpeacialty);
+		sendWarningWhenRedirect(redirectAttrs, "common.disabled.success");
+		return "redirect:/learnspeacialty";
+	}
+
+	/**
+	 * Set LearnSpeacialty Enabled
+	 * 
+	 * @param id
+	 * @param redirectAttrs
+	 * @return
+	 */
+	@RequestMapping(value = "/{id}/enabled")
+	public String enabled(@PathVariable Long id,
+			final RedirectAttributes redirectAttrs) {
+		LearnSpeacialty learnSpeacialty = learnSpeacialtyService.findById(id);
+
+		// 是否存在
+		if (null == learnSpeacialty) {
+			sendErrorMessageWithParameterWhenRedirect(redirectAttrs,
+					"common.obj.notfound", "Id:" + id);
+			return "redirect:/learnspeacialty";
+		}
+
+		learnSpeacialty.setActive(true);
+		learnSpeacialtyService.update(learnSpeacialty);
+		sendNoticeWhenRedirect(redirectAttrs, "common.enabled.success");
+		return "redirect:/learnspeacialty";
+	}
+
+}

@@ -1,0 +1,92 @@
+package com.boventech.gplearn.controller;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.boventech.gplearn.entity.SenderNotification;
+import com.boventech.gplearn.entity.User;
+import com.boventech.gplearn.service.SenderNotificationService;
+import com.boventech.gplearn.service.UserService;
+import com.google.common.collect.Sets;
+
+@Controller
+@RequestMapping(value = "/mail/sender")
+public class SenderNotificationController extends ApplicationController {
+
+    @Autowired
+    private SenderNotificationService senderNotificationService;
+
+    @Autowired
+    private UserService userService;
+
+    @RequestMapping(method = RequestMethod.GET)
+    public String index(Model model, HttpServletRequest request, Integer page) {
+    	User user = (User)request.getSession().getAttribute("currentUser");
+        List<SenderNotification> senderNotifications = this.senderNotificationService
+                .listAllNotificationByUser(user, page);
+        model.addAttribute("senderNotifications", senderNotifications);
+        return "common/mailsender";
+    }
+
+    @RequestMapping(value = "{id}", method = RequestMethod.GET)
+    public String show(Model model, HttpServletRequest request, @PathVariable String id) {
+        SenderNotification senderNotification = this.senderNotificationService.findById(Long
+                .parseLong(id));
+        model.addAttribute("senderNotification", senderNotification);
+        return "common/newmail";
+    }
+
+    @RequestMapping(value = "/new", method = RequestMethod.GET)
+    public String editNew(ModelMap model) {
+        return "common/newmail";
+    }
+    
+    @RequestMapping(method = RequestMethod.POST)
+    public String create(Model model, HttpServletRequest request, Integer page, User user,
+            SenderNotification senderNotification, String loginname,final RedirectAttributes redirectAttrs) {
+        if("".equals(loginname)){
+            sendNoticeWhenRedirect(redirectAttrs, "notification.send.faild");
+            return "redirect:/notification/sendernotification";
+        }
+        setSenderNotification(user, senderNotification, loginname);
+        this.senderNotificationService.sendNotification(senderNotification);
+        sendNoticeWhenRedirect(redirectAttrs, "notification.send.success");
+        return "redirect:/notification/sendernotification";
+    }
+
+    @RequestMapping(value = "{id}", method = RequestMethod.DELETE)
+    public String destory(Model model, HttpServletRequest request, @PathVariable String id,
+            final RedirectAttributes redirectAttrs) {
+        this.senderNotificationService.delete(Long.parseLong(id));
+        sendNoticeWhenRedirect(redirectAttrs, "common.destroy.success");
+        return "redirect:/notification/sendernotification";
+    }
+
+    @RequestMapping(value = "{id}/edit", method = RequestMethod.GET)
+    public String edit(Model model, HttpServletRequest request, @PathVariable String id) {
+        SenderNotification senderNotification = this.senderNotificationService.findById(Long.parseLong(id));
+        model.addAttribute("senderNotification", senderNotification);
+        return "/notification/sendernotification/edit";
+    }
+
+    private void setSenderNotification(User user, SenderNotification senderNotification, String loginname) {
+        senderNotification.setSender(user);
+        senderNotification.setTime(new Date());
+        User receiver = this.userService.findByLoginName(loginname);
+        Set<User> receivers = Sets.newHashSet();
+        receivers.add(receiver);
+        senderNotification.setReceivers(receivers);
+    }
+}

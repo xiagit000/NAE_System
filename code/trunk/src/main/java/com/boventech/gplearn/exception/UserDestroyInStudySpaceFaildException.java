@@ -1,0 +1,16 @@
+package com.boventech.gplearn.exception;
+
+public class UserDestroyInStudySpaceFaildException extends Exception {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 748806026267447090L;
+
+
+	@Override
+	public String getMessage() {
+		return "__________________________________UserDestroyInStudySpaceFaildException__________________________________";
+	}
+	
+}

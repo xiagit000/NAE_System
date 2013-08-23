@@ -1,0 +1,51 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="r" tagdir="/WEB-INF/tags/r" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+
+<r:layout title="用户账户" >
+          <ul class="breadcrumb">
+              <li><r:a href="/">首页</r:a> <span class="divider">/</span></li>
+              <li class="active">用户账户管理</li>
+            </ul>
+            <r:a href="/user/exportExcel" class="btn btn-large btn-primary disabled">批量导出账号</r:a>
+    <br/>
+    <br/>
+    <table class="table table-hover" >
+       <thead>
+        <tr>
+            <th>编号</th>
+            <th>登录名</th>
+            <th>用户类型</th>
+            <th>用户姓名</th>
+            <th>证件类型</th>
+            <th>证件号</th>
+            <th>批次</th>
+            <th>状态</th>
+            <th>操作</th>
+        </tr>
+       </thead>
+       <tbody>
+       <c:forEach items="${users}" var="user" varStatus="status">
+       <tr>
+       <td><span class="badge">${status.index+1}</span></td>
+       <td>${user.loginName }</td>
+       <td><fmt:message key="${user.userType}" /></td>
+       <td>${user.account.name }</td>
+       <td><fmt:message key="${user.account.idType}" /></td>
+       <td>${user.account.idNumber }</td>
+       <td>${user.batch.name }</td>
+       <td>${user.active==true?"已激活":"未激活" }</td>
+       <td>
+       <r:a href="/user/${user.id }" data-method="delete" data-confirm="确定要删除吗？" class="btn">删除</r:a>
+       </td></tr>
+      
+       </c:forEach>
+       </tbody>
+    </table>
+    <div class="toolbar">
+            <div class="pagination pagination-centered">
+            <r:paginate data="${users}" />
+            </div>
+            </div>
+</r:layout>

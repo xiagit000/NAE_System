@@ -1,0 +1,73 @@
+package com.boventech.gplearn.dao.impl;
+
+
+import java.util.List;
+
+import com.boventech.gplearn.dao.QuestionDao;
+import com.boventech.gplearn.entity.Discipline;
+import com.boventech.gplearn.entity.LearnClass;
+import com.boventech.gplearn.entity.Question;
+import com.boventech.gplearn.entity.User;
+
+public class QuestionDaoImpl extends BaseDaoImpl<Question, Long> implements QuestionDao {
+
+	@Override
+	public List<Question> listByAsker(User user,Integer page) {
+		String queryString = "FROM Question q WHERE q.asker=?1";
+		return executeQueryWithPagination(queryString, " ORDER BY q.id DESC", page,user);
+		
+	}
+
+	@Override
+	public List<Question> listByAsker(User user) {
+		String queryString = "FROM Question q WHERE q.asker=?1";
+		return executeQueryWithoutPaging(queryString, user);
+	}
+
+	@Override
+	public List<Question> listWithPaginationBylearnClass(LearnClass learnClass,
+			Integer page) {
+		String queryString = "FROM Question q WHERE q.learnClass=?1";
+		return executeQueryWithPagination(queryString, " ORDER BY q.resolved ASC", page, learnClass);
+	}
+
+	@Override
+	public List<Question> listwithPaginationByDiscipline(Discipline discipline,
+			Integer page) {
+		String queryString = "FROM Question q WHERE q.discipline=?1";
+		return executeQueryWithPagination(queryString, " ORDER BY q.resolved ASC", page, discipline);
+	}
+
+	@Override
+	public Integer countByLearnClass(LearnClass learnClass) {
+		String queryString ="select count(*) FROM Question q WHERE q.learnClass=?1";
+		return executeCountQuery(queryString, learnClass);
+	}
+
+	@Override
+	public List<Question> listByLearnClass(LearnClass learnClass) {
+		String queryString ="FROM Question q WHERE q.learnClass=?1"; 
+		return executeQueryWithoutPaging(queryString, learnClass);
+	}
+
+	@Override
+	public void delete(User user) {
+		String queryString = "DELETE FROM Question q WHERE q.asker=?1";
+		executeUpdateOrDelete(queryString, user);
+	}
+
+	@Override
+	public Integer getQuestionCount() {
+		String queryString = "select count(*) FROM Question q";
+		return executeCountQuery(queryString);
+	}
+
+	@Override
+	public Integer getQuestionResolvedCount() {
+		String queryString = "select count(*) FROM Question q WHERE q.resolved=?1";
+		return executeCountQuery(queryString,true);
+	}
+
+	
+
+}

@@ -1,0 +1,101 @@
+package com.boventech.gplearn.service.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.boventech.gplearn.dao.LearnPlanDao;
+import com.boventech.gplearn.entity.LearnCourse;
+import com.boventech.gplearn.entity.LearnPlan;
+import com.boventech.gplearn.entity.LearnSubProject;
+import com.boventech.gplearn.service.LearnPlanService;
+import com.google.common.collect.Lists;
+
+@Service
+@Transactional
+public class LearnPlanServiceImpl implements LearnPlanService {
+
+	@Autowired
+	private LearnPlanDao learnPlanDao;
+	
+	@Override
+	public List<LearnPlan> listWithPagination(Integer page) {
+		return learnPlanDao.listWithPagination(page);
+	}
+
+	@Override
+	public void delete(LearnPlan t) {
+		learnPlanDao.delete(t);
+	}
+
+	@Override
+	public void delete(Long id) {
+		learnPlanDao.deleteById(id);
+	}
+
+	@Override
+	public LearnPlan findById(Long id) {
+		return learnPlanDao.findByID(id);
+		
+	}
+
+	@Override
+	public void save(LearnPlan t) {
+		learnPlanDao.save(t);
+	}
+
+	@Override
+	public void update(LearnPlan t) {
+		learnPlanDao.update(t);
+	}
+
+	@Override
+	public boolean isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRange(
+			LearnPlan learnPlan) {
+		return learnPlanDao.isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRange(learnPlan);
+	}
+
+	@Override
+	public boolean isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRangeWithOutCurrent(
+			LearnPlan learnPlan) {
+		return learnPlanDao.isExsitByBatchAndLearnCourseAndLearnSubProjectAndLearnRangeWithOutCurrent(learnPlan);
+	}
+
+	@Override
+	public boolean isExsitByCode(String code) {
+		return learnPlanDao.isExsitByCode(code);
+	}
+
+	@Override
+	public boolean isExsitByName(String name) {
+		return learnPlanDao.isExsitByName(name);
+	}
+
+	@Override
+	public boolean isExsitByCodeWithOutCurrent(LearnPlan learnPlan) {
+		return learnPlanDao.isExsitByCodeWithOutCurrent(learnPlan);
+	}
+
+	@Override
+	public boolean isExsitByNameWithOutCurrent(LearnPlan learnPlan) {
+		return learnPlanDao.isExsitByNameWithOutCurrent(learnPlan);
+	}
+
+	@Override
+	public List<LearnCourse> listLearnCourseBylearnSubProject(LearnSubProject learnSubProject) {
+		List<LearnPlan> list=learnPlanDao.listLearnCourseBylearnSubProject(learnSubProject);
+		List<LearnCourse> result = Lists.newArrayList();
+		for(LearnPlan learnPlan: list){
+			result.add(learnPlan.getLearnCourse());
+		}
+		return result;
+	}
+
+	@Override
+	public List<LearnPlan> listAll() {
+		return learnPlanDao.listAll();
+	}
+
+}

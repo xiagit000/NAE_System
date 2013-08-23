@@ -1,0 +1,363 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.entity;
+
+import java.io.Serializable;
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
+/**
+ * 班级
+ */
+@Entity
+@Table(name = "learnClass")
+public class LearnClass implements Serializable {
+
+    private static final long serialVersionUID = -8737146389674314805L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
+    @Column(length = 255, nullable = false)
+    private String name;
+
+    @Column(length = 255, nullable = false)
+    private String code;
+
+    // 班级全名
+    @Column(length = 255, nullable = false)
+    private String allName;
+
+    @Column(length = 2000)
+    private String address;
+
+    @Column(length = 255, nullable = false)
+    private String zipCode;
+
+    // 区号
+    @Column(length = 50, nullable = false)
+    private String areaCode;
+
+    @Column(length = 255, nullable = false)
+    private String tel;
+
+    // 负责人
+    @Column(length = 255)
+    private String personIncharge;
+
+    // logo路径
+    @Column(length = 255)
+    private String logoPath;
+
+    // 创建时间
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = false)
+    private Date createTime;
+
+    private boolean status;
+
+    // 创建人
+    @ManyToOne(cascade = CascadeType.REFRESH)
+    @JoinColumn(name = "createPerson")
+    private User user;
+
+    // 培训项目
+    @ManyToOne(cascade = CascadeType.REFRESH)
+    @JoinColumn(name = "learnProject_id")
+    private LearnSubProject learnProject;
+
+    // 培训区域
+    @ManyToOne(cascade = CascadeType.REFRESH)
+    @JoinColumn(name = "learnArea_id")
+    private LearnArea learnArea;
+
+    // 招生计划
+    @OneToOne(cascade = CascadeType.REFRESH, mappedBy = "learnClass")
+    private EnrollmentPlan enrollmentPlan;
+
+    // 班级对应的学籍
+    @OneToMany(cascade = CascadeType.REFRESH, mappedBy = "learnClass")
+    private List<SchoolRoll> schoolRolls;
+
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * @param id
+     *            the id to set
+     */
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * @param name
+     *            the name to set
+     */
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    /**
+     * @return the status
+     */
+    public boolean isStatus() {
+        return status;
+    }
+
+    /**
+     * @param status
+     *            the status to set
+     */
+    public void setStatus(boolean status) {
+        this.status = status;
+    }
+
+    /**
+     * @return the code
+     */
+    public String getCode() {
+        return code;
+    }
+
+    /**
+     * @param code
+     *            the code to set
+     */
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    /**
+     * @return the allName
+     */
+    public String getAllName() {
+        return allName;
+    }
+
+    /**
+     * @param allName
+     *            the allName to set
+     */
+    public void setAllName(String allName) {
+        this.allName = allName;
+    }
+
+    /**
+     * @return the address
+     */
+    public String getAddress() {
+        return address;
+    }
+
+    /**
+     * @param address
+     *            the address to set
+     */
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    /**
+     * @return the zipCode
+     */
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    /**
+     * @param zipCode
+     *            the zipCode to set
+     */
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    /**
+     * @return the areaCode
+     */
+    public String getAreaCode() {
+        return areaCode;
+    }
+
+    /**
+     * @param areaCode
+     *            the areaCode to set
+     */
+    public void setAreaCode(String areaCode) {
+        this.areaCode = areaCode;
+    }
+
+    /**
+     * @return the tel
+     */
+    public String getTel() {
+        return tel;
+    }
+
+    /**
+     * @param tel
+     *            the tel to set
+     */
+    public void setTel(String tel) {
+        this.tel = tel;
+    }
+
+    /**
+     * @return the personIncharge
+     */
+    public String getPersonIncharge() {
+        return personIncharge;
+    }
+
+    /**
+     * @param personIncharge
+     *            the personIncharge to set
+     */
+    public void setPersonIncharge(String personIncharge) {
+        this.personIncharge = personIncharge;
+    }
+
+    /**
+     * @return the logoPath
+     */
+    public String getLogoPath() {
+        return logoPath;
+    }
+
+    /**
+     * @param logoPath
+     *            the logoPath to set
+     */
+    public void setLogoPath(String logoPath) {
+        this.logoPath = logoPath;
+    }
+
+    /**
+     * @return the createTime
+     */
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    /**
+     * @param createTime
+     *            the createTime to set
+     */
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    /**
+     * @return the user
+     */
+    public User getUser() {
+        return user;
+    }
+
+    /**
+     * @param user
+     *            the user to set
+     */
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    /**
+     * @return the learnProject
+     */
+    public LearnSubProject getLearnProject() {
+        return learnProject;
+    }
+
+    /**
+     * @param learnProject
+     *            the learnProject to set
+     */
+    public void setLearnProject(LearnSubProject learnProject) {
+        this.learnProject = learnProject;
+    }
+
+    /**
+     * @return the learnArea
+     */
+    public LearnArea getLearnArea() {
+        return learnArea;
+    }
+
+    /**
+     * @param learnArea
+     *            the learnArea to set
+     */
+    public void setLearnArea(LearnArea learnArea) {
+        this.learnArea = learnArea;
+    }
+
+    /**
+     * @return the enrollmentPlan
+     */
+    public EnrollmentPlan getEnrollmentPlan() {
+        return enrollmentPlan;
+    }
+
+    /**
+     * @param enrollmentPlan
+     *            the enrollmentPlan to set
+     */
+    public void setEnrollmentPlan(EnrollmentPlan enrollmentPlan) {
+        this.enrollmentPlan = enrollmentPlan;
+    }
+
+    /**
+     * @return the schoolRolls
+     */
+    public List<SchoolRoll> getSchoolRolls() {
+        return schoolRolls;
+    }
+
+    /**
+     * @param schoolRolls the schoolRolls to set
+     */
+    public void setSchoolRolls(List<SchoolRoll> schoolRolls) {
+        this.schoolRolls = schoolRolls;
+    }
+    
+    
+}

@@ -1,0 +1,4 @@
+default.paginate.label.previous = &laquo;
+default.paginate.label.next = &raquo;
+
+user.login.label = Login

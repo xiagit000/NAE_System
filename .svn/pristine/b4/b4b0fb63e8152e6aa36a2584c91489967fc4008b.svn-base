@@ -1,0 +1,34 @@
+/*
+ * Copyright 2010. 
+ * 
+ * This document may not be reproduced, distributed or used 
+ * in any manner whatsoever without the expressed written 
+ * permission of Boventech Corp. 
+ * 
+ * $Rev: Rev $
+ * $Author: Author $
+ * $LastChangedDate: LastChangedDate $
+ *
+ */
+
+package com.boventech.gplearn.service;
+
+import java.util.List;
+
+import com.boventech.gplearn.entity.Account;
+import com.boventech.gplearn.entity.EnrollmentPlan;
+import com.boventech.gplearn.entity.SchoolSpace;
+
+
+public interface SchoolSpaceService extends BaseService<SchoolSpace, Long>{
+	
+	SchoolSpace findBySchoolName(String schoolName);
+    
+    void save(List<SchoolSpace> schoolSpaces);
+    
+    List<SchoolSpace> generateSchoolSpaces(List<Account> accounts,EnrollmentPlan enrollmentPlan);
+    
+    boolean checkExistBySchoolName(String schoolName);
+
+	List<SchoolSpace> listByUncreate();
+}
